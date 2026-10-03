@@ -9,6 +9,12 @@
 // weapon_tech.h.
 #include "weapon_tech.h"
 
+// C export for tools (GetProcAddress): the version string, e.g. "0.1.0-alpha". Not a Lua function.
+extern "C" __declspec(dllexport) const char *weapon_tech_version()
+{
+	return WT_VERSION_STRING;
+}
+
 // lua_CFunction: returning 1 hands back the top stack value (the argument), so no Lua API is needed.
 extern "C" __declspec(dllexport) int init(void *)
 {

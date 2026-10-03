@@ -28,6 +28,7 @@
 // Logs to weapon_tech.log next to the exe; after init the game thread only queues lines and a background thread writes
 // them (bo3_zone.h StartLogWriter). A/B switches and perf_timing=1: bo3_additive.h.
 #pragma once
+#include "wt_version.h"
 #include "bo3_additive.h"
 #include "bo3_arxan.h"
 #include "bo3_assets.h"
@@ -530,7 +531,7 @@ namespace
 		if (g_wtInitialised)
 			return g_wtActive;
 		g_wtInitialised = true;
-		Log("weapon_tech loaded from %s", dllDir);
+		Log("weapon_tech %s loaded from %s", WT_VERSION_STRING, dllDir);
 		if (!LoadWeaponTechConfig(dllDir))
 			return false;
 		if (!KnownBuild())

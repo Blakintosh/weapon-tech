@@ -83,8 +83,20 @@ one text file, `weapon_tech.cfg`.
 - **Live tuning:** while the game runs, saving the cfg reloads it (`[features]` itself is read at start). Simple values apply straight away; anything that
   sets up hooks or animation slots needs a game restart. [`docs/CONFIG_REFERENCE.md`](docs/CONFIG_REFERENCE.md) marks
   which keys are live and lists every key and default.
-- **Shipping:** if there's no loose cfg next to the DLL, weapon_tech reads a rawfile `weapon_tech/weapon_tech.cfg`
-  from your map's zone instead.
+- **Baked cfg:** if there's no loose cfg next to the DLL, weapon_tech reads a rawfile `weapon_tech/weapon_tech.cfg`
+  from your map's zone instead (see [Shipping your map](#shipping-your-map)).
+
+## Shipping your map
+
+No linker changes are needed. When you publish:
+
+1. Keep `weapon_tech.dll` in `usermaps\<map>\zone\`, next to your fastfile, so it uploads with the map.
+2. Ship the cfg one of two ways:
+   - **Loose file** (simplest): leave `weapon_tech.cfg` next to the DLL. Players can see and edit it.
+   - **Baked into the map:** put it at `usermaps\<map>\weapon_tech\weapon_tech.cfg` and add
+     `rawfile,weapon_tech/weapon_tech.cfg` to your map's `.zone` file, then remove the loose copy from `zone\`.
+     A loose file, if present, always wins, which is handy for tuning during development.
+3. Make sure your UI Lua loads the DLL (step 3 of the Quick start) in the shipped build, not just a dev one.
 
 ## Feature guide
 
@@ -216,6 +228,8 @@ This writes `build\weapon_tech.dll`.
 
 ## Troubleshooting
 
+- **Which version is this?** The first line of `weapon_tech.log` says, e.g. `weapon_tech 0.1.0-alpha loaded from ...`.
+  It's also in the DLL's file properties, and tools can call the exported `weapon_tech_version()`.
 - **Nothing happens:** check `weapon_tech.log`. It says whether the exe was recognised, which cfg was read, and why
   a feature was skipped.
 - **A cfg change didn't apply:** that key probably needs a game restart; see the reference.

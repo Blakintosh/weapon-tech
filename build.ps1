@@ -40,7 +40,8 @@ $src = Join-Path $PSScriptRoot 'src'
 $objFwd = $obj.Replace([string][char]92, '/') + '/'  # cl wants a trailing slash; a backslash would escape the closing quote
 
 $cmd = "`"$vcvars`" >nul && cd /d `"$src`" && " +
-       "cl /nologo /O2 /MT /EHsc /std:c++17 /LD weapon_tech.cpp /Fo`"$objFwd`" /Fe:`"$Out\weapon_tech.dll`" /link kernel32.lib && " +
+       "rc /nologo /fo `"$obj\weapon_tech.res`" weapon_tech.rc && " +
+       "cl /nologo /O2 /MT /EHsc /std:c++17 /LD weapon_tech.cpp `"$obj\weapon_tech.res`" /Fo`"$objFwd`" /Fe:`"$Out\weapon_tech.dll`" /link kernel32.lib && " +
        "cl /nologo /O2 /MT /EHsc /std:c++17 wt_cfgdump.cpp /Fo`"$objFwd`" /Fe:`"$Out\wt_cfgdump.exe`" /link kernel32.lib"
 if ($Extras) {
     $ax = Join-Path $PSScriptRoot 'extras\arxan'
