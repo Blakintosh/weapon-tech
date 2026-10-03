@@ -4,6 +4,204 @@ Every key `weapon_tech.dll` reads, taken from the parsers in `src/` (weapon_tech
 header comment and the code disagree, this document follows the code. A commented example with a working line for each
 feature is in `examples/weapon_tech.cfg`.
 
+The file layout comes first (format v2: `[features]`, one section per feature, guns lists,
+`[weapon:<name>]`, generated blocks), then the keys, grouped by the section they live in.
+
+## File structure (format v2)
+
+A cfg is either the old **flat** list of `key=value` lines or the **sectioned** layout below. weapon_tech tells them
+apart by the first `[section]` header. A file without one is read exactly as before. A sectioned file is turned into
+flat lines first (`src/wt_cfgv2.h`), so every key in this reference works in both. The weapontech linker feature uses the
+same code, so its checks read the same lines. `tools/cfg_migrate.py` converts a flat file and proves the result
+configures the DLL identically (see [Migrating](#migrating-a-flat-cfg)).
+
+```ini
+# lines before the first [section] are read the flat way (old files, or anything you want kept as is)
+
+[features]            # master switches: an off feature installs nothing, even with its lines in the file
+additives   = on
+ammo_hide   = on
+kick        = on      # IW8 WOP kick + patterns
+kick_return = off
+camera      = on      # cam_shake / camera_free
+locomotion  = on      # idle_active / walk / jog / sway
+inspect     = on
+last_shot   = auto    # auto | iw | hold: the default for every gun
+empty_melee = on
+interrupts  = off     # experimental
+segreload   = on
+slide       = off     # map-wide
+vmfov       = off     # off | mw | <deg>
+ik          = off     # experimental
+
+[inspect]
+key  = I              # short for inspect_key
+guns = smg_a_zm, smg_b_zm:6.6, smg_c_zm:off
+
+[additives]
+additive=smg_a_zm,recoil,195,vm_smg_a_recoil_additive,1.0,1.2   # per-gun detail lines keep their full key
+
+[weapon:smg_d_zm]     # one gun's settings across features, as a GDT compiler writes them
+wtInspect = on
+wtFireTimeMs = 80
+```
+
+### Sections
+
+| Section | Holds | Short keys (prefix added) |
+|---|---|---|
+| `[features]` | the master switches (below) | |
+| `[general]` | `perf_*`, `cfg_dump`, anything no feature owns | none: keys as written |
+| `[additives]` | `additive=`, `slots_*`, `belt_dump`, `additive_*` | `additive_` (`enable` = `additive_enable`) |
+| `[ammo_hide]` | `ammohide*` | `ammohide_` (`guard`, `park`, `order`, ...) |
+| `[kick]` | `wop*` (patterns, kick sets, springs, tilt, per-gun `wop_kickreturn`, `wop_alias`) | `wop_` (`kick_consts`, `debug`, ...) |
+| `[camera]` | `cam_shake`, `camera_free` | `shake`, `free` |
+| `[locomotion]` | `locomotion*`, `idle_active*`, `sway_*` | `locomotion_` (`jog`, `debug`, `enable`, `alias`) |
+| `[inspect]` | `inspect*` | `inspect_` (`key`, `empty`, `hidehud` or `hide_hud`, `akimbo`) |
+| `[last_shot]` | per-gun `empty_lastshot` | `default` = the global mode |
+| `[empty_melee]` | `empty_melee_fix`, `interrupt_empty_melee`, `additive_melee_fade` | `fix`, `raise`, `additive_fade` |
+| `[interrupts]` | `interrupt*` | `interrupt_` |
+| `[segreload]` | `segreload*` | `segreload_` |
+| `[slide]` | `slide_*` | `slide_` (`suit`, `dvars`, `gesture`, ...) |
+| `[vmfov]` | `vmfov_*` | `vmfov_` (`ads`, `depth`, `max`, `debug`); `mode` = `vmfov` |
+| `[ik]` | `ik*` | `ik_` (`notes`, `alias`, `debug`, `blend`, ...) |
+| `[weapon:<name>]` | one weapon's settings (below) | |
+
+* **Keys:** `key = value` (spaces around `=` are fine in a section). Inside a section the feature prefix may be left
+  out; full key names are accepted in every section. A key that already belongs to a feature (`sway_parts` in
+  `[locomotion]`, `additive_melee_fade` in `[empty_melee]`) is never prefixed.
+* **Sections can repeat.** A second `[additives]` later in the file adds to the first. Lines keep their file order
+  within a section, which matters for `wop_alias` (it copies a block written above it).
+* **Unknown sections** are logged once (`unknown section(s): [name]`); their lines are read with the keys as written.
+* **Comments:** `#` lines and blank lines are dropped. A detail line keeps a trailing `# ...` (the parsers ignore it
+  where they did before); `[features]` values and guns lists drop it.
+* **Line length:** lines are still read 255 characters at a time, and `<key>=<weapon>,+,...` still continues a long
+  `ammohide_order=` / `ammohide_spend=` list. Split a long guns list over several `guns =` lines: they add up.
+* **`[features]` is read at start.** Change it and restart; the live keys inside the sections stay live.
+
+### `[features]`
+
+| Feature | Values | On | Off |
+|---|---|---|---|
+| `additives` | on / off | layers as configured (`additive_enable` stays a live A/B fade) | no additive or slot layer |
+| `ammo_hide` | on / off | | no ammohide, hide order, auto hide or round guard |
+| `kick` | on / off | | no `wop*` block: no patterns, kick sets or springs |
+| `kick_return` | on / off | `wop_kickreturn=1` | `wop_kickreturn=0` |
+| `camera` | on / off | | no `cam_shake` / `camera_free`, global or per gun (live reloads keep it off) |
+| `locomotion` | on / off | | no walk, jog, idle_active or sway |
+| `inspect` | on / off | `inspect_enable=1` | `inspect_enable=0` |
+| `last_shot` | auto / iw / hold | the default `empty_lastshot` mode | |
+| `empty_melee` | on / off | `empty_melee_fix=1` | no empty-melee fix and no `interrupt_empty_melee` |
+| `interrupts` | on / off | | `interrupt_enable=0` |
+| `segreload` | on / off | | `segreload_enable=0` |
+| `slide` | on / off | `slide_enable=1` | `slide_enable=0` |
+| `vmfov` | off / mw / <deg> | the mode, as `vmfov=` | `vmfov=off` |
+| `ik` | on / off | `ik_enable=1` | no IK lines at all (no hooks) |
+
+A feature `[features]` doesn't name keeps the old keys' behaviour, so a file without `[features]` works as it always
+did. Each `*_enable` key maps onto its feature: `cfg_migrate.py` folds them into `[features]`. The A/B switches that fade
+a live feature (`additive_enable`, `locomotion_enable`, `idle_active_enable`, `sway_enable`) still work inside their
+section, so `enable = 0` in `[additives]` still fades the layers without a restart.
+
+At start the log has one line with what each feature ended up with, for example:
+
+    weapon_tech: features (format v2, [features] applied): additives(93 guns) ammo_hide(29) kick(86) kick_return:on
+    camera(1) locomotion(51, sway 30) inspect(101) last_shot:auto(+0) empty_melee:on interrupts(0) segreload(2) slide:off
+    vmfov:off ik(1)
+
+### Guns lists
+
+The simple per-gun features take a list instead of one line per gun. `<gun>:<p1>:<p2>` passes parameters; `on` / `off`
+as the first parameter sets the switch.
+
+| Section | Key | Entry | Same as |
+|---|---|---|---|
+| `[inspect]` | `guns` | `<gun>[:off][:<seconds>]` | `inspect=<gun>,<1\|0>[,<seconds>]` |
+| `[ik]` | `guns` | `<gun>[:off][:<l\|r\|lr>[:<noteless weight>[:<orient>]]]` | `ik=<gun>,<1\|0>[,...]` |
+| `[segreload]` | `guns` | `<gun>:<end\|start\|off>` (a bare gun = end) | `segreload_empty=<gun>,<mode>` |
+| `[last_shot]` | `guns` | `<gun>:<auto\|iw\|hold>` | `empty_lastshot=<gun>,<mode>` |
+| `[ammo_hide]` | `auto_off` | `<gun>` | `ammohide_auto=<gun>,0` |
+| `[additives]` | `take_jukes` | `<gun>` | `slots_take_jukes=<gun>` |
+
+Per-gun data that doesn't fit a list (additive layers, WOP blocks, sway blocks, `wop_kickreturn` per gun, which has to
+come before the gun's `wop_alias` lines) stays as detail lines in its section.
+
+### `[weapon:<name>]`: the per-weapon form
+
+One section per weapon, holding that weapon's settings across features. The keys are the `wt*` keys of the GDT design
+(`gdt_schema/DESIGN_weapontech_gdt.md`), so a compiler that reads them from the weapon GDTs can write this form 1:1.
+Precedence: a weapon's entry here replaces its entry in a feature section's guns list; `[features]` gates everything.
+Any per-weapon cfg key also works here with the weapon left out (`wop = 1,0,2,...` is `wop=<name>,1,0,2,...`).
+
+| Key | Becomes |
+|---|---|
+| `wtSource` | `wop_alias=<w>,<source>`, written first so the weapon's own lines override the copy |
+| `wtFireTimeMs` | `wop_weapon=<w>,<ms>` |
+| `wtKickPct` | `wop_kickpct=<w>,<v>` |
+| `wtKick1` ... `wtKick24` | `wop_kick=<w>,<v>` (file order) |
+| `wtSpringViewHip` / `ViewAds` / `GunHip` / `GunAds` | `wop_spring=<w>,0,0,<v>` / `0,1` / `1,0` / `1,1` |
+| `wtTilt` | `wop_tilt=<w>,<v>` |
+| `wtWopCurveHoldSlow` / `HoldFast` / `Kick` / `SnapDecay` / `Ads` / `AlwaysOn` | `wop_curve=<w>,0..5,<v>` |
+| `wtWop1` ... `wtWop16` | `wop=<w>,<v>` (a `# label` may follow) |
+| `wtKickReturn`, `wtKickMaintain`, `wtKickNoDampening` | `wop_kickreturn=<w>,<on>[,<maintain>[,<noDamp>]]` |
+| `wtCamShakeAngles` / `Roll` / `Origin` / `PitchUp` | `cam_shake=<w>,<a>,<r>,<o>[,<pitchUp>]` (unset = -1: falls back) |
+| `wtCameraFree` | `camera_free=<w>,<v>` |
+| `wtSwayAdv` / `AdvGun` / `AdvFire` / `IdleMisc` / `Stance` / `AdsBob` | `sway_adv` / `sway_advgun` / ... `=<w>,<v>` |
+| `wtSwayIdle1` / `wtSwayIdle2` | `sway_idle=<w>,1\|2,<v>` |
+| `wtSwayGraphDeadzone` / `wtSwayGraphGun` | `sway_graph=<w>,0\|1,<v>` |
+| `wtLocoWalkStrides`, `wtLocoWalkRate` | `locomotion=<w>,walk,bob,<n>[,<rate>]` |
+| `wtLocoJogLeaf`, `Weight`, `Rate`, `Strides` | `locomotion=<w>,jog,<leaf>[,<w>[,<rate>[,<n>]]]` |
+| `wtIdleActiveAnim`, `Leaf` (194), `Weight`, `Rate` | `idle_active=<w>,<anim>,<leaf>[,<w>[,<rate>]]` |
+| `wtAdditive{Empty,Recoil,Bullet}{Anim,Root,Weight}`, `wtAdditiveRecoilRate`, `wtAdditiveBulletMag` | `additive=<w>,<kind>,<root>,<anim>[,<weight>[,<rate\|mag>]]` (roots 195 / 195 / 193) |
+| `wtAdditiveSlot1` ... | `additive=<w>,<v>`: a purpose-slot line (`bullet,slot:bullets,<anim>,1,30,side:left`) |
+| `wtAmmoHide` / `Order` / `Spend` / `Reverse` | `ammohide` / `ammohide_order` / `_spend` / `_reverse` `=<w>,<v>` |
+| `wtAmmoHideAuto` | `ammohide_auto=<w>,<1\|0>` |
+| `wtIk`, `wtIkHands`, `wtIkNotelessWeight`, `wtIkOrient` | `ik=<w>,<on>[,<hands>[,<w>[,<orient>]]]` |
+| `wtSegReloadEmpty` | `segreload_empty=<w>,<v>` |
+| `wtInspect`, `wtInspectTime` | `inspect=<w>,<on>[,<seconds>]` |
+| `wtInterrupt1` ... `wtInterrupt8` | `interrupt=<w>,<v>` |
+| `wtEmptyLastShot` | `empty_lastshot=<w>,<v>` |
+| `wtRecoil`, `wtSway`, `wtLoco`, `wtInterrupt` = off | that group's keys in this section are left out |
+
+Modes take `on` / `off` (or `1` / `0`). An unknown `wt*` key is logged and ignored.
+
+### Generated blocks
+
+A tool that writes into the cfg owns a fenced block and rewrites it whole:
+
+```ini
+# ==== BEGIN generated:<tool> ====
+[additives]
+additive=...
+# ==== END generated:<tool> ====
+```
+
+The block opens its own section, and the section in force before `BEGIN` comes back at `END`, so a block can sit
+anywhere in the file. Edit by hand outside the fences only. The generators that write this form: `ammohide_order`
+(`tools/ammohide_order.py`, `[ammo_hide]`), and the Karelia pipeline's `build_bullet_empty_additives`,
+`build_bullet_empty_additives.slots` and `build_bo7_fill` (`[additives]`). They find and replace their old
+`# ==== BEGIN <title> ====` fences too.
+
+### Checking a cfg: `cfg_dump`
+
+`cfg_dump = 1` (in `[general]`, or `cfg_dump=1` flat) writes two files next to `weapon_tech.log`:
+`weapon_tech.cfgdump.txt` holds an FNV hash of every parsed table and switch after the `[features]` gates, with a line
+per entry, and `weapon_tech.cfgnorm.txt` holds the flat lines the parsers read. Two cfgs with the same `state hash`
+configure the DLL the same way. `src/wt_cfgdump.cpp` builds the same check as a console tool:
+
+    cl /nologo /O2 /MT /EHsc /std:c++17 wt_cfgdump.cpp /Fe:wt_cfgdump.exe /link kernel32.lib
+    wt_cfgdump <weapon_tech.cfg> <state out> [<flat lines out>]
+
+### Migrating a flat cfg
+
+    python tools/cfg_migrate.py <weapon_tech.cfg> --in-place --check [--dump-tool <wt_cfgdump.exe>]
+
+It writes `[features]` from the old switches, moves every line into its section in file order with the comments above
+it, collapses the simple per-gun lines into guns lists where every line round-trips exactly, keeps generator blocks
+whole (old fences become `generated:` fences), and leaves anything a section would read differently above
+`[features]`. `--check` parses the old and new file with `wt_cfgdump.exe` and only replaces the file (backup
+`<cfg>.pre_cfgv2.bak`) when the parsed state is identical. `--check-only <new>` compares two existing files.
+
 ## Supported executables
 
 | Build | SizeOfImage | TimeDateStamp | Notes |
@@ -37,7 +235,7 @@ writes them every 100 ms.
 
 ## Line syntax
 
-* `key=value`, one per line. `\r\n` and `\n` both work. Lines can be up to 255 characters; anything longer is cut off
+* `key=value`, one per line (inside a `[section]`, `key = value` also works: see above). `\r\n` and `\n` both work. Lines can be up to 255 characters; anything longer is cut off
   and the rest is read as a new line. A few keys have a continuation form for long lists (`ammohide_order=` and
   `ammohide_spend=`: `<weapon>,+,...` continues that weapon's earlier line of the same key).
 * **Unknown keys are ignored**, but not silently: each distinct unknown key is logged once at load as
@@ -65,7 +263,7 @@ logs the first one it sees and ignores them all.
 
 ---
 
-## 1. Additive layers, ammohide, empty melee (bo3_additive.h, bo3_slots.h, bo3_roundguard.h)
+## 1. Additive layers, ammohide, empty melee: `[additives]`, `[ammo_hide]`, `[last_shot]`, `[empty_melee]`
 
 | Key | Format | Default | Live | Notes |
 |---|---|---|---|---|
@@ -90,7 +288,7 @@ logs the first one it sees and ignores them all.
 | `empty_melee_fix=1` | exact text `=1` | off | no | Three code patches: melee `jz` to `jmp`, and the `BG_ClipEmpty` calls in the empty raise and empty drop replaced by `xor eax,eax`. `empty_melee_fix=0` is accepted (it is the default spelled out). |
 | `additive_melee_fade=` | `0\|1` | 0 | no | Fades the held gun's own empty / bullet / recoil layers (`additive=` and slot lines) to 0 during its melee states, back in after. Only matters for a gun with its own melee; IW8 keeps them on. Always on, with no key: while the viewmodel shows another weapon (a knife melee, an offhand), the held gun's additive / slot / ammohide / locomotion / slide / IK layers are not written into that weapon's tree. |
 
-## 2. IW8 weapon offsets, kick and camera (bo3_wop.h, bo3_iw8kick.h, bo3_additive.h)
+## 2. IW8 weapon offsets, kick and camera: `[kick]`, `[camera]` (bo3_wop.h, bo3_iw8kick.h)
 
 | Key | Format | Default | Live | Notes |
 |---|---|---|---|---|
@@ -111,7 +309,7 @@ logs the first one it sees and ignores them all.
 | `cam_shake=` (per weapon) | `<weapon>,py,roll,origin[,pitchUp]` | unset (uses the global) | yes | Falls back to the wop_alias source, then the global. |
 | `camera_free=` | `<0..1>` or `<weapon>,<0..1>` | 0 | yes | 1 = IW8 camera anims: `tag_camera` moves only the camera and the viewmodel stays put. Only acts while a WOP weapon is held and `tag_camera` moved the view. |
 
-## 3. Locomotion and idle active (bo3_locomotion.h)
+## 3. Locomotion and idle active: `[locomotion]` (bo3_locomotion.h)
 
 | Key | Format | Default | Live | Notes |
 |---|---|---|---|---|
@@ -125,7 +323,7 @@ logs the first one it sees and ignores them all.
 | `locomotion_enable=` | `0\|1` | 1 | yes; a removed line counts as 1 | |
 | `idle_active_enable=` | `0\|1` | 1 | yes; a removed line counts as 1 | |
 
-## 4. MW19 sway (bo3_sway.h)
+## 4. MW19 sway: `[locomotion]` (bo3_sway.h)
 
 Every `sway_*` line is **live** if the cfg had at least one per-weapon sway line at game start (that is when the hooks
 install). The whole sway table is rebuilt on each reload, so a removed line goes back to the defaults below.
@@ -159,7 +357,7 @@ install). The whole sway table is rebuilt on each reload, so a removed line goes
 
 `sway_camlead` and the `frameId` / `camLead` globals mentioned in bo3_sway.h have no cfg key; they are always on.
 
-## 5. Hand IK (bo3_ik.h)
+## 5. Hand IK: `[ik]` (bo3_ik.h)
 
 | Key | Format | Default | Live | Notes |
 |---|---|---|---|---|
@@ -171,7 +369,7 @@ install). The whole sway table is rebuilt on each reload, so a removed line goes
 | `ik_always=` | `0\|1` | 0 | yes | |
 | `ik_debug=` | `0\|1` | 0 | yes | |
 
-## 6. Segmented-reload empty variants (bo3_segreload.h)
+## 6. Segmented-reload empty variants: `[segreload]` (bo3_segreload.h)
 
 **Not live.**
 
@@ -180,7 +378,7 @@ install). The whole sway table is rebuilt on each reload, so a removed line goes
 | `segreload_empty=` | `<weapon>,<end\|mw\|mw19\|mw2019\|start\|mwii\|mw2\|mw22\|off\|0>` | none | Up to 64. With any line present, 8 BG call sites are redirected (they run on the server and in client prediction). |
 | `segreload_enable=` | `0\|1` | 1 | 0 means not installed. |
 
-## 7. Inspect (bo3_inspect.h, bo3_inspect_hud.h)
+## 7. Inspect: `[inspect]` (bo3_inspect.h, bo3_inspect_hud.h)
 
 **Not live.** Nothing installs unless `inspect_enable=1` **and** at least one `inspect=` line are both present.
 
@@ -196,7 +394,7 @@ install). The whole sway table is rebuilt on each reload, so a removed line goes
 
 UI models published: `hudItems.weaponTech.inspecting` and `hudItems.weaponTech.inspectHideHud`.
 
-## 8. Interrupts (bo3_interrupt.h)
+## 8. Interrupts: `[interrupts]` (bo3_interrupt.h)
 
 **Not live.**
 
@@ -208,10 +406,11 @@ UI models published: `hudItems.weaponTech.inspecting` and `hudItems.weaponTech.i
 | `interrupt_trace=` | `0\|1` | 0 | Debug: logs hand 0's BG weapon state / anim changes (`itrace:` lines, server and prediction ps). On its own it installs the two PM_Weapon call redirects, even with no `interrupt=` lines. |
 | `interrupt_empty_melee=` | `0\|1` | 0 | Rapid melee with an empty clip, as with ammo. One code patch: the `BG_ClipEmpty` call in PM_Weapon_CheckForReload (Enhanced +0x27B3A35) becomes `xor eax,eax`, so the post-melee quick raise (state 32, which melee can interrupt) is no longer turned into an empty raise (state 1, which blocks melee) when the clip is empty. The patch is in BG, so server and prediction match. Independent of `interrupt=` lines and `interrupt_enable`. |
 
-## 9. Perf and diagnostics (bo3_perf.h, bo3_additive.h)
+## 9. Perf and diagnostics: `[general]` (bo3_perf.h, bo3_additive.h)
 
 | Key | Format | Default | Live | Notes |
 |---|---|---|---|---|
+| `cfg_dump=` | `0\|1` | 0 | no | Writes `weapon_tech.cfgdump.txt` (parsed state hashes) and `weapon_tech.cfgnorm.txt` (the flat lines read) next to the log; see [Checking a cfg](#checking-a-cfg-cfg_dump). |
 | `perf_eventhooks=` | `0\|1` | 1 | **no** (a live edit logs "live" but does nothing) | 1 redirects the registration call and both tree-build calls whenever the anim hook is in. |
 | `perf_cfgwatch=` | `0\|1` | 1 | **no** (same) | 1 starts the watcher thread. |
 | `perf_pollms=` | 100-60000 | 2000 | yes; a removed line keeps the last value | Fallback poll interval for the variant table. |
@@ -224,7 +423,7 @@ moved for 50 ms, i.e. while the solo pause menu has the game stopped. The layers
 when the game runs again. Log: `gameclock: paused ...` / `gameclock: running again ...`. Inspect already runs on client
 time.
 
-## 10. Slide and viewmodel FOV (bo3_slide.h, bo3_vmfov.h)
+## 10. Slide and viewmodel FOV: `[slide]`, `[vmfov]` (bo3_slide.h, bo3_vmfov.h)
 
 Both are **opt-in**: with no `slide_enable=1` / `vmfov=` line nothing is installed and nothing changes.
 

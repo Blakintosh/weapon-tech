@@ -46,10 +46,16 @@ one text file, `weapon_tech.cfg`.
    `init(true)` returns `true` when weapon_tech is running. It's safe to call on every level load.
 4. **Add a gun** to the cfg. For example, a recoil layer and an inspect for one weapon:
 
-   ```
+   ```ini
+   [features]
+   additives = on
+   inspect   = on
+
+   [additives]
    additive=smg_charlie9_kar_zm,recoil,195,vm_sm_charlie9_recoil_additive,1.0,2.27
-   inspect_enable=1
-   inspect=smg_charlie9_kar_zm,1
+
+   [inspect]
+   guns = smg_charlie9_kar_zm
    ```
 
 5. **Check the log:** `weapon_tech.log` next to `BlackOps3.exe` lists the cfg it read, what it installed, and
@@ -59,10 +65,22 @@ one text file, `weapon_tech.cfg`.
 
 ## The cfg file
 
-- One `key=value` per line, max 255 characters. Long lists carry on with `<key>=<weapon>,+,...` lines.
-- Comments start with `#` and go on their own line. A comment after a value breaks some lines.
-- Weapon names are the full variant names (e.g. `ar_mike16_kar_zm`) and are case-sensitive.
-- **Live tuning:** while the game runs, saving the cfg reloads it. Simple values apply straight away; anything that
+- **Sections:** `[features]` switches each feature on or off: a feature that is off installs nothing, even with its
+  lines in the file. Every other section holds one feature's lines: `[additives]`, `[ammo_hide]`, `[kick]`,
+  `[camera]`, `[locomotion]`, `[inspect]`, `[last_shot]`, `[empty_melee]`, `[interrupts]`, `[segreload]`, `[slide]`,
+  `[vmfov]`, `[ik]`, and `[general]` for perf and debug keys.
+- **Keys:** `key = value`, max 255 characters a line. Inside a section the feature prefix may be dropped (`key = I` in
+  `[inspect]` is `inspect_key`); full key names work in any section.
+- **Guns lists:** the simple per-gun features take a list: `guns = gun_a, gun_b:6.6, gun_c:off` (inspect, ik,
+  segreload, last_shot). Data-heavy lines (`additive=`, `wop=`, `sway_*=`) stay one line per record in their section.
+- **Per weapon:** `[weapon:<name>]` sections hold one gun's settings across features with the `wt*` keys a GDT
+  compiler will emit; they override that gun's guns-list entries.
+- **Generated blocks:** tools write between `# ==== BEGIN generated:<tool> ====` and `# ==== END generated:<tool> ====`
+  and rewrite the block whole. Edit outside the fences.
+- **Old flat files** (no `[section]`) still work unchanged. `tools/cfg_migrate.py <cfg> --in-place --check` converts one
+  and checks the DLL parses both to the same state (`cfg_dump = 1` does the same check in game).
+- Comments start with `#`. Weapon names are the full variant names (e.g. `ar_mike16_kar_zm`) and are case-sensitive.
+- **Live tuning:** while the game runs, saving the cfg reloads it (`[features]` itself is read at start). Simple values apply straight away; anything that
   sets up hooks or animation slots needs a game restart. [`docs/CONFIG_REFERENCE.md`](docs/CONFIG_REFERENCE.md) marks
   which keys are live and lists every key and default.
 - **Shipping:** if there's no loose cfg next to the DLL, weapon_tech reads a rawfile `weapon_tech/weapon_tech.cfg`
