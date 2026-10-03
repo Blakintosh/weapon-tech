@@ -1,5 +1,5 @@
 // MW-style weapon inspect, client side and visual only (replaces scripts\lilrobot\_inspectable_weapons.gsc).
-// Enhanced exe only. Recon: xpakcap\segreload\ (e6af0.txt = CG_UpdateViewWeaponAnim, s3.txt = the hook site, t2.txt).
+// Both supported exes (addresses: bo3_build.h / bo3_retail.h). Recon: the author's research notes (e6af0.txt = CG_UpdateViewWeaponAnim, s3.txt = the hook site, t2.txt).
 //
 // Config (weapon_tech.cfg; not live):
 //   inspect_enable=1                     master switch (default 0: nothing is installed)
@@ -78,7 +78,7 @@ namespace
 
 	// Weapon states (ps->weaponState, hand 0) and what each means for an inspect.
 	//   S = inspect may START from it, I = entering it INTERRUPTS a running inspect.
-	// Sources: PM_Weapon 0x1427C1EA0 and its helpers (xpakcap\additives\NOTES_additives.txt section 4, segreload\).
+	// Sources: PM_Weapon 0x1427C1EA0 and its helpers (the author's research notes section 4, segreload\).
 	//   0        READY                                        S
 	//   1, 2     RAISING, RAISING_ALT                         I   (weapon switch / first raise)
 	//   3, 4, 5  DROPPING, DROPPING_QUICK, DROPPING_ALT       I

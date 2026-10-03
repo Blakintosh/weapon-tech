@@ -1,6 +1,6 @@
 // MW19-style viewmodel locomotion for BO3 weapons (included at the end of bo3_additive.h; runs in its hook after
 // CG_UpdateViewWeaponAnim, i.e. after the engine's own walk / juke writes and before the tree advances).
-// Research: xpakcap\locomotion\REPORT_locomotion.md (walk, bob, jukes, IW8 jog rules).
+// Research: the author's research notes (walk, bob, jukes, IW8 jog rules).
 //
 // Nodes (viewmodel XAnimTree, node = weapAnimFiles slot):
 //   walk   additive root 182 -> leaf 183 (walkAnim). The engine sets both weights every frame (0x1404E4F00) and

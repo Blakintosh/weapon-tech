@@ -1,5 +1,5 @@
-// Weapon additive layers driven at runtime (proof of concept, BO3 Enhanced exe only for now).
-// Recon: xpakcap\additives\NOTES_additives.txt (addresses there are absolute; RVAs here).
+// Weapon additive layers driven at runtime (proof of concept, BO3 both supported exes for now).
+// Recon: the author's research notes (addresses there are absolute; RVAs here).
 //
 // Every viewmodel XAnimTree has two additive blend groups that no game code touches:
 // 193 -> 194 and 195 -> 196 (made for swimming, dead in ZM). Weapon anim slots are stored as NAMES on
@@ -336,7 +336,7 @@ namespace
 	//   (sway_enable=0 is the sway's own, bo3_sway.h)
 	bool g_additiveEnable = true, g_locoEnable = true, g_idleActiveEnable = true;
 
-	// Melee and the viewmodel's weapon (2026-10-02, xpakcap\emptymelee\):
+	// Melee and the viewmodel's weapon (2026-10-02, the author's research notes):
 	// BG_GetViewmodelWeapon 0x1427A79C0(ps) is what CG_UpdateViewWeaponAnim builds the viewmodel from: the held weapon,
 	// except in the melee states (21, 23-31, 33: BG_GetMeleeWeapon 0x1427CE210, the knife ps+0x2E8 unless the gun has its
 	// own melee) and the offhand states (37-46, 106-112 with ps+0x18 & 2: ps+0x298). The additive / slot layers are keyed on
@@ -2434,7 +2434,7 @@ namespace
 			Log("additive: %s: not a call to BG_ClipEmpty at +%zx, not patched", what, rva);
 	}
 
-	// ---- IW8 recoil hooks (research: xpakcap\additives\view\NOTES_view.txt) -------------------------
+	// ---- IW8 recoil hooks (research: the author's research notes) -------------------------
 	// All three are call-site rel32 patches (the callees sit in Arxan tables, so no prologue detours).
 	uintptr_t kCallCalcWeaponPos = 0x126F94A;  // CG_AddViewWeapon: call CG_CalculateWeaponPosition
 	uintptr_t kCalcWeaponPos = 0x126D750;      // (cg*, placement*, float ang[3])

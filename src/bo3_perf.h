@@ -1,5 +1,5 @@
 // Weapon variant resolution driven by the engine's own events (included at the end of bo3_additive.h, after
-// bo3_locomotion.h and bo3_sway.h). Research: IDA dumps in xpakcap\perf\ (m1-m3.txt, vt.txt; a private copy of the IDB).
+// bo3_locomotion.h and bo3_sway.h). Research: IDA dumps in the author's research notes (m1-m3.txt, vt.txt; a private copy of the IDB).
 //
 // The cfg names weapons; the code needs their variant indices (ps weapon & 0x1FF), and additive= / idle_active= also
 // write xanim names into a variant's slot names before the viewmodel tree is built from them. That used to be a rescan

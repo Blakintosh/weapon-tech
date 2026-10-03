@@ -1,5 +1,5 @@
 // Empty variants for segmented (shell-by-shell) reloads: MW2019 rechamber ends and MWII-style empty starts.
-// Enhanced exe only. Recon: decompiles in xpakcap\segreload\ (r1.txt, r2.txt; addresses there are absolute, RVAs here).
+// Both supported exes (addresses: bo3_build.h / bo3_retail.h). Recon: decompiles in the author's research notes (r1.txt, r2.txt; addresses there are absolute, RVAs here).
 // Reload state machine (PM_Weapon 0x1427C1EA0, hand 0 at ps+0x54, hand 1 at ps+0x70):
 //   begin 0x1427B0DC0: segmented && reloadStartTime -> state 15 (16), anim 41 RELOAD_START, time WeaponDef+0xAF0;
 //                      else 0x1427B06B0.

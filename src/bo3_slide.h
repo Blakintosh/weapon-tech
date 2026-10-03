@@ -1,10 +1,10 @@
-// MW2019 (IW8) slide for BO3 (Enhanced exe only). OPT-IN: nothing is installed or changed unless slide_enable=1 is in the
-// cfg when the DLL starts. Research: xpakcap\slide\REPORT_slide.md (IW8 SuitDef / dvars, BO3 slide functions), the IW8
+// MW2019 (IW8) slide for BO3 (both supported exes). OPT-IN: nothing is installed or changed unless slide_enable=1 is in the
+// cfg when the DLL starts. Research: the author's research notes (IW8 SuitDef / dvars, BO3 slide functions), the IW8
 // decompile bg_slide.cpp / bg_pmove.cpp and the IW8 PDB build (PM_WalkMove's slide-in acceleration = suit inAcceleration).
 //
 // ---- Movement (BG: server Pmove and client prediction both run it) ---------------------------------------------------
 // Every hook is a call-site rel32 redirect through one stub page; every callee was checked in IDA (work.i64): plain code,
-// no control-flow flattening, no pointer-decryption state, no return-address reads (xpakcap\slide\obf1.txt). The original
+// no control-flow flattening, no pointer-decryption state, no return-address reads (the author's research notes). The original
 // is always called from our hook with the caller's own arguments; our code runs before and after it. Only the ps being
 // processed (and pm's usercmd copy, which IW8 itself edits) is written, and only from the ps, the usercmd and the cfg, so
 // the server's snapshot matches the client's prediction. Every ps field used is networked (BO3 ps netfields 0x143370CF0:

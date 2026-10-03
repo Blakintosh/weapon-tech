@@ -1,5 +1,5 @@
 // MW19 (IW8) first-person weapon sway for BO3 weapons (included at the end of bo3_additive.h, after bo3_locomotion.h).
-// Research and formulas: xpakcap\additives\sway\REPORT_sway.md; reference evaluator: sway_sim.py next to it (this is a
+// Research and formulas: the author's research notes; reference evaluator: sway_sim.py next to it (this is a
 // straight port of its AdvancedSway, Idle, Base stance pivots and AdsGunBob). IW8 sources: OpenIW8 cg_view_motion.cpp
 // (AdvancedSwayState / Deadzone / GunDir / Springs), bg_weapons_view.cpp (_IdleAngles, _MovementTiltAngles, _Base),
 // cg_weapons.cpp (CG_CalculateWeaponMovement_CalcAngles pivots), KisakCOD com_math.cpp (LinearTrack, graphs).

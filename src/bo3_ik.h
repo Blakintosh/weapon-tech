@@ -12,7 +12,7 @@
 //   ik_out_start_<hand> .. ik_out_end_<hand>  weight ramps 1 -> 0
 //   (hand = left_hand / right_hand; an anim with no IK notes counts as weight 1)
 //
-// BO3 side (Enhanced exe, research: xpakcap\ik\NOTES_ik.txt):
+// BO3 side (Enhanced exe, research: the author's research notes):
 //   DObjCalcSkel 0x1423F85D0(DObj*, u32 partBits[12], float *origin): anim calc, then local -> model space for the
 //   requested bones; result in DObj+0x58 (DObjAnimMat[numBones]: quat xyzw, trans xyz, transWeight), calculated bits
 //   at DObj+0xC8, frame stamp DObj+0xF8, lock DObj+0x100 (held by both callers around the call).

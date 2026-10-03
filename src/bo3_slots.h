@@ -1,6 +1,6 @@
 // Purpose slots: more additive layers per viewmodel than the two free swim groups (193 / 195) give, by building extra
 // additive ROOTS out of spare juke leaves and hanging spare base slots under them as their leaves. Included by
-// weapon_tech.h after bo3_slide.h. Research: xpakcap\additives\NOTES_additives*.txt (XAnimCalc, tree build) and the
+// weapon_tech.h after bo3_slide.h. Research: the author's research notes*.txt (XAnimCalc, tree build) and the
 // IDA dumps of the 2026-10-02 slot survey (CC980's whole ps-anim -> node map; the jump / land / fall / juke drivers).
 //
 // Why a spare base slot can't just play additively where it is: the viewmodel XAnimTree is node 0 "root" with children

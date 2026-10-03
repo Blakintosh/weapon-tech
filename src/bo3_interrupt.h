@@ -1,6 +1,6 @@
 // IW-style weapon state interrupts: a raise, reload, reload start / loop / end or the post-bolt part of a rechamber can
 // end early once it reaches its interrupt point, when an action the cfg allows is pending (fire, ADS, sprint, melee,
-// reload, weapon switch). Enhanced exe only. Recon: xpakcap\interrupt\ (d1-d4.txt) and xpakcap\segreload\.
+// reload, weapon switch). Both supported exes (addresses: bo3_build.h / bo3_retail.h). Recon: the author's research notes (d1-d4.txt) and the author's research notes
 //
 // IW8 (bg_weapons.cpp PM_Weapon_IsInInterruptibleState / PM_Weapon_ProcessHand): every frame
 //   interruptible = elapsed >= interruptMs (per-anim timers in WeaponAnimPackageStateTimers, or the 'interruptible'

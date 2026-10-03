@@ -1,6 +1,6 @@
 // Viewmodel FOV pin (opt-in, global, off unless vmfov= says otherwise). Included by weapon_tech.h after bo3_additive.h.
 //
-// What BO3 does (Enhanced exe; research: xpakcap\vmfov\):
+// What BO3 does (Enhanced exe; research: the author's research notes):
 //   * One projection for the whole frame. CG_CalcFov 0x1405AFA30 (wrapper 0x1405B6690) turns the FOV into a lens
 //     (focal length = 7 / (0.75 tan(fov/2)), clamped by the lens table, focus breathing) and writes the refdef
 //     (cg+0x131CF0): +0x78 tanHalfFovX, +0x7C tanHalfFovY (+0x80 the same), +0x84 the final FOV in degrees (cg_fov's
