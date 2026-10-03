@@ -210,4 +210,4 @@ build.bat, build.ps1
 * An older neutraliser that patches only the 1,000 plain Arxan checks crashes retail about 20 s later; use the one in this
   repo.
 * Typos in keys are only logged, not rejected.
-* No license has been chosen yet.
+* Licensed under the MIT License; see [LICENSE](LICENSE).
