@@ -31,6 +31,7 @@
 #include "bo3_zone.h"
 #include "bo3_build.h"
 #include "bo3_wop.h"
+#include "bo3_features.h"
 #include <atomic>
 
 namespace
@@ -515,8 +516,8 @@ namespace
 		return false;
 	}
 
-	// The whole cfg as text (text mode, as fgets reads it), malloc'd; nullptr if it can't be opened.
-	char *ReadCfgText(const char *path)
+	// The whole file as text (text mode, as fgets reads it), malloc'd; nullptr if it can't be opened.
+	char *ReadCfgFileRaw(const char *path)
 	{
 		FILE *f = fopen(path, "r");
 		if (!f)
@@ -539,6 +540,11 @@ namespace
 			text[n] = 0;
 		return text;
 	}
+
+	// The cfg as every parser reads it (malloc'd; nullptr if it can't be opened): a sectioned (format v2) file comes back
+	// as flat key=value lines (bo3_features.h NormaliseCfgText, wt_cfgv2.h), a flat one as it is. Every reader goes
+	// through here: the start, the live reloads and the slide watcher.
+	char *ReadCfgText(const char *path) { return NormaliseCfgText(ReadCfgFileRaw(path), "weapon_tech.cfg"); }
 
 	// fgets over a buffer: the next line (through its '\n', at most cap - 1 chars) into `line`; nullptr at the end.
 	const char *NextCfgLine(const char *p, char *line, size_t cap)
@@ -607,6 +613,8 @@ namespace
 				continue;
 			}
 			bool cam;
+			if (FeatOff(kFtCamera) && (strncmp(line, "cam_shake=", 10) == 0 || strncmp(line, "camera_free=", 12) == 0))
+				continue;  // [features] camera = off
 			if (!ParseCameraLine(line, cam))
 				Log("additive: live reload: bad line '%s'", line);
 			if (cam)
@@ -681,6 +689,10 @@ namespace
 		}
 		if (sway)
 			EndSwayReload();
+		if (FeatOff(kFtAdditives))  // [features]: an off feature stays off through live reloads
+			g_additiveEnable = false;
+		if (FeatOff(kFtLocomotion))
+			g_locoEnable = g_idleActiveEnable = false;
 		g_el = g_elLoad;
 		Log("additive: empty_lastshot: default %s, %d weapon line(s)", g_el.def == kElIw ? "iw" : g_el.def == kElHold ? "hold" : "auto",
 		    g_el.count);

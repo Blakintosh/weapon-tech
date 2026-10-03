@@ -438,6 +438,8 @@ namespace
 				Log("ik: live reload: bad line '%s'", line);
 			}
 		}
+		if (FeatOff(kFtIk))  // [features] ik = off: stays off
+			IkResetConfig();
 		Log("ik: live: ik_enable %d, %d weapon line(s), %d ik_notes line(s), %d alias(es), blend %.2f, always %d, debug %d%s",
 		    g_ikEnable, g_ikWeaponCount, g_ikNotesCfgCount, g_ikAliasCount, g_ikBlend, g_ikAlways, g_ikDebug,
 		    g_ikHooked ? "" : " (hooks not in: needs ik= lines at game start)");

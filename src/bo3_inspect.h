@@ -611,7 +611,7 @@ namespace
 		if (!g_insEnable || !g_insCount)
 		{
 			if (g_insCount)
-				Log("inspect: inspect_enable isn't 1; not installed (%d weapon line(s))", g_insCount);
+				Log("inspect: off (inspect_enable / [features] inspect); not installed (%d weapon line(s))", g_insCount);
 			return;
 		}
 		if (!WtExeSupported())

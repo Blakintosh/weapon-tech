@@ -132,6 +132,8 @@ namespace
 	// default again (so a removed vmfov= is off).
 	void VmFovReloadText(const char *text)
 	{
+		if (FeatOff(kFtVmFov))  // [features] vmfov = off: stays off
+			return;
 		VmFovConfig c;
 		char line[256];
 		int lines = 0;
