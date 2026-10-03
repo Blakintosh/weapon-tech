@@ -85,7 +85,7 @@ A short guide to each feature. The full syntax for every key is in the [config r
 | Inspect & empty inspect | `inspect_enable=1` + `inspect=` | off | ✅ | ✅ | Stable |
 | Last shot (`empty_lastshot`) | automatic with an `empty` layer | auto | ✅ | ✅ | Stable |
 | Empty-gun melee / rapid melee | `empty_melee_fix=1`, `interrupt_empty_melee=1` | off | ✅ | ✅ | Stable |
-| Interrupts | `interrupt=` lines | off | ✅ | ✅ | Needs per-gun tuning |
+| Interrupts | `interrupt=` lines | off | ✅ | ✅ | Experimental |
 | Segmented reloads | `segreload_empty=` | off | ✅ | ✅ | Stable |
 | MW slide | `slide_enable=1` (map-wide) | off | ✅ | ✅ | Stable |
 | Viewmodel FOV pin | `vmfov=mw` (map-wide) | off | ✅ | ✅ | Stable |
@@ -211,7 +211,7 @@ This writes `build\weapon_tech.dll`.
 - Most setup keys need a game restart to change.
 - On dual-wield guns, the left gun's spent rounds don't hide yet. Its empty and bullets layers do work.
 - The bullets animation can run about one round ahead near a full mag.
-- Hand IK is experimental. Interrupts, segmented reloads and inspects may need per-gun tuning.
+- Hand IK and interrupts are experimental (little in-game testing yet). Segmented reloads and inspects may need per-gun tuning.
 - Kick return needs at least one `wop_kick` line for the gun.
 
 ## Repo layout
