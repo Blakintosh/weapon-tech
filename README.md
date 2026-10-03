@@ -1,27 +1,38 @@
 # weapon_tech
 
-**ALPHA.** Expect rough edges, behaviour that changes between builds, and features that have only been exercised in a few
-maps and guns. Nothing here is a stable API.
+> **Alpha.** Things will change between builds, and some features have only been tried on a handful of maps and guns.
 
-`weapon_tech.dll` is a Black Ops III viewmodel and weapon-feel DLL. It hooks the game's viewmodel animation update and the
-BG weapon code and, driven entirely by a text file (`weapon_tech.cfg`), adds the things modern Call of Duty guns do that
-BO3's weapon system can't: additive animation layers (recoil, bullets, empty), IW8 kick and camera patterns, MW19 sway and
-locomotion, inspect, interrupts, akimbo per-hand layers, hand IK, the MW2019 slide and more.
+`weapon_tech.dll` brings modern Call of Duty weapon feel to Black Ops III custom maps. It adds recoil and empty-state
+animation layers, MW2019-style kick and sway, inspects, akimbo per-hand animation, and more. Everything is driven by
+one text file, `weapon_tech.cfg`.
 
-* **Supported executables:** BO3 Enhanced (CL 20659811; `SizeOfImage 0x1A53F000`, `TimeDateStamp 0x67363F2A`) and the stock
-  retail exe (CL 13892626; `0x1D74B000`, `0x693D731E`). On any other build the DLL installs nothing.
-* **Independent of T7Overcharged** (or any other DLL). It only needs to be loaded from the map's UI Lua. It also carries its
-  own Arxan neutraliser for retail.
-* **Everything is opt-in.** With no cfg, or a cfg without lines for a feature, that feature installs no hooks and changes
-  nothing.
+- **Works on both PC builds:** BO3 Enhanced and the standard retail exe. On any other exe it does nothing.
+- **Standalone:** no dependency on T7Overcharged or any other DLL.
+- **Opt-in:** each feature only switches on for the guns you list in the cfg. Guns you don't mention behave exactly
+  as stock BO3.
 
-## Install and loading
+## What it can do
 
-1. Build `weapon_tech.dll` (below) or take a release build.
-2. Put `weapon_tech.dll` and `weapon_tech.cfg` together in the map's `zone` folder, e.g.
-   `usermaps\<map>\zone\`. The cfg is read from next to the DLL.
-3. Load the DLL once from the map's UI Lua (main/LUI thread), before the first weapon raise, e.g. from a file the map's
-   Lua already loads:
+| Feature | What you get |
+|---|---|
+| **Additive layers** | Recoil, live round count (bullets) and empty-gun pose (bolt back, slide locked) as additive animations on any gun |
+| **Akimbo per-hand layers** | Each dual-wield gun shows its own empty and bullet state |
+| **Ammo hide** | Spent rounds disappear from see-through mags and belts as you fire, and come back on reload |
+| **IW8 kick & recoil patterns** | MW2019 weapon-offset patterns, view kick, kick return, camera shake |
+| **Idle, locomotion & sway** | MW2019 idle_active, walk and jog loops, advanced sway |
+| **Inspect** | Press a key to inspect; separate empty-gun inspect; optional HUD hide |
+| **Last shot** | The gun locks empty at the right moment, with or without a fire-last animation |
+| **Melee & interrupts** | Rapid melee on an empty gun; raises and reloads can be cut short like in IW games |
+| **Segmented reloads** | Shell-by-shell reloads with MW2019- or MWII-style empty handling |
+| **MW slide** | MW2019 slide movement and slide gestures (global opt-in) |
+| **Viewmodel FOV pin** | Keeps the gun the same size on screen whatever the player's FOV (global opt-in) |
+| **Hand IK** *(experimental)* | Keeps the hands on the gun during non-rigid additives |
+
+## Quick start
+
+1. **Build** the DLL (see [Building](#building)), or grab a release.
+2. **Copy** `weapon_tech.dll` and a `weapon_tech.cfg` into your map's `zone` folder, e.g. `usermaps\<map>\zone\`.
+3. **Load it** once from your map's UI Lua, before the player first raises a weapon:
 
    ```lua
    local pkg = require("package")
@@ -32,184 +43,174 @@ locomotion, inspect, interrupts, akimbo per-hand layers, hand IK, the MW2019 sli
    end
    ```
 
-   `init(true)` returns `true` when the weapon tech is active (cfg found, known exe, hooks in), `nil` otherwise. It is safe
-   to call on every level load; the work is done once per process. Scripts can read the `weapontech_active` dvar.
-4. Log: `weapon_tech.log` next to `BlackOps3.exe`. It names the cfg it used, every hook it installed, and anything it
-   refused. **Read it after the first run.**
+   `init(true)` returns `true` when weapon_tech is running. It's safe to call on every level load.
+4. **Add a gun** to the cfg. For example, a recoil layer and an inspect for one weapon:
 
-Where the cfg comes from (first found wins): the loose `weapon_tech.cfg` next to the DLL (live-reloaded while the game runs,
-see below), else a rawfile `weapon_tech/weapon_tech.cfg` baked into the map's zone (read once). Weapon names in the cfg are
-the weapon variant names (e.g. `ar_mike16_kar_zm`), case-sensitive.
+   ```
+   additive=smg_charlie9_kar_zm,recoil,195,vm_sm_charlie9_recoil_additive,1.0,2.27
+   inspect_enable=1
+   inspect=smg_charlie9_kar_zm,1
+   ```
 
-Cfg syntax: `key=value`, one per line, up to 255 characters (longer lists continue on `<key>=<weapon>,+,...` lines).
-Put `#` comments on their own line (a trailing comment breaks `additive=` and `wop=` lines). Unknown keys are logged once.
-Start from [`examples/weapon_tech.cfg`](examples/weapon_tech.cfg) and see
-[`docs/CONFIG_REFERENCE.md`](docs/CONFIG_REFERENCE.md) for every key, default, and what is live.
+5. **Check the log:** `weapon_tech.log` next to `BlackOps3.exe` lists the cfg it read, what it installed, and
+   anything it skipped and why. Read it after your first run.
 
-Live tuning: with `weapon_tech.cfg` loose, a watcher thread re-reads it when its modification time changes. Keys marked
-"live" in the reference apply immediately; the rest (anything that installs a hook or writes an anim slot) need a restart.
+[`examples/weapon_tech.cfg`](examples/weapon_tech.cfg) has a commented example of every feature to copy from.
 
-## Features and cfg keys
+## The cfg file
 
-Details, formats and defaults for every key are in the reference. This is the overview.
+- One `key=value` per line, max 255 characters. Long lists carry on with `<key>=<weapon>,+,...` lines.
+- Comments start with `#` and go on their own line. A comment after a value breaks some lines.
+- Weapon names are the full variant names (e.g. `ar_mike16_kar_zm`) and are case-sensitive.
+- **Live tuning:** while the game runs, saving the cfg reloads it. Simple values apply straight away; anything that
+  sets up hooks or animation slots needs a game restart. [`docs/CONFIG_REFERENCE.md`](docs/CONFIG_REFERENCE.md) marks
+  which keys are live and lists every key and default.
+- **Shipping:** if there's no loose cfg next to the DLL, weapon_tech reads a rawfile `weapon_tech/weapon_tech.cfg`
+  from your map's zone instead.
 
-### Additive layers and semantic slots
-Write an additive xanim into a spare slot of the gun's anim tree and drive its weight and time from game state.
-* `additive=<weapon>,<empty|recoil|bullet>,<193|195>,<xanim>[,weight[,mag|rate]]`: the legacy form (root 193/195).
-* `additive=<weapon>,<kind>,slot:<purpose>,<xanim>[,weight[,mag|rate]][,side:left]`: purpose slots built from spare juke
-  leaves: `bullets` (root 192 / leaf 117), `empty` (190 / 118), `recoil_ads` (189 / 119), `idle`, `recoil`.
-* `slots_take_jukes=<weapon|all>` lets slots use juke roots on a gun that names its juke anims; `slots_debug`, `slots_dump`.
-* `additive_enable`, `additive_melee_fade`, `additive_debug`.
-* `empty` = the gun-empty pose (bolt back, slide locked); `bullet` = round count driven by the clip (anim frame per round);
-  `recoil` = an additive scrubbed per shot at `rate`.
+## Feature guide
 
-### Akimbo (dual wield) per-side layers
-`side:left` drives a slot line from the LEFT gun's clip and state (empty root 186 / leaf 124, bullets 185 / 108), so each
-hand's slide or rounds follow their own gun. The left xanim must key the left gun's bones (see Authoring).
-`side:right` is the default. No left recoil layer.
+A short guide to each feature. The full syntax for every key is in the [config reference](docs/CONFIG_REFERENCE.md).
 
-### IW8 kick and recoil patterns
-The IW8 weapon-offset (WOP) patterns and view kick: `wop_weapon`, `wop_curve`, `wop` (patterns), `wop_kick` (+ `wop_kickpct`),
-`wop_spring` (replaces BO3's view-kick integrator), `wop_tilt`, `wop_alias`, `wop_kick_consts=iw8|legacy`, `wop_debug`.
-`tools/iw8_wop_cfg.py` converts an IW8 weapon json.
-* **Kick return:** `wop_kickreturn=1` (global, plus per weapon `wop_kickreturn=<weapon>,<0|1>[,maintain[,noDampening]]`).
-* **Camera shake / free:** `cam_shake=<pitch/yaw>,<roll>,<origin>[,pitchUp]` (global or per weapon) scales the pattern camera
-  shake; `camera_free=<0..1>` makes tag_camera move only the camera (IW8 behaviour). Only act on WOP weapons.
+### Additive layers
+Plays an additive animation on top of the gun's normal animation, driven by game state.
 
-### idle_active, locomotion, sway
-* `idle_active=<weapon>,<xanim|*>,<leaf>[,weight[,rate]]` plus `idle_active_fade=iw8|linear[,s]`: IW8's looping hip idle
-  additive (full weight at the hip, off in ADS).
-* `locomotion=<weapon>,walk,bob,<strides>` and `locomotion=<weapon>,jog,<leaf>[,...]`, `locomotion_alias`, `locomotion_jog`:
-  MW19 walk loops locked to BO3's bob (multi-stride anims) and a jog layer.
-* `sway_*` (`sway_adv`, `sway_advgun`, `sway_idle`, `sway_stance`, `sway_adsbob`, ...): MW19 advanced hip sway, idle,
-  stance pivots and ADS gun bob, ported from IW8.
+- `empty`: the empty-gun pose (slide locked, bolt back), shown at 0 ammo.
+- `bullet`: a round-count animation, one frame per round, driven by the clip.
+- `recoil`: played per shot.
 
-### Inspect, empty inspect, HUD hide
-`inspect_enable=1` + `inspect=<weapon>,1[,seconds]` + `inspect_key=I`. The inspect plays the gun's `lowReadyLoop` anim. MWII
-empty inspects use `lowReadyIn` / `lowReadyOut` when the clip is 0 (`inspect_empty=in|out|off`). `inspect_hidehud=1` hides the
-HUD (`hudItems.weaponTech.inspecting` / `inspectHideHud` UI models); the crosshair always hides. `inspect_akimbo` (default 1)
-handles dual wield.
+Recoil uses `additive=<weapon>,recoil,195,<xanim>,<weight>,<rate>`. Empty and bullets go in named slots:
+`additive=<weapon>,empty,slot:empty,<xanim>,1.0`, or `slot:bullets` with the mag size as the last value.
 
-### empty_lastshot
-`empty_lastshot=<auto|iw|hold>` or `<weapon>,<mode>`: how the empty layer comes on after the last round. `hold` stays off
-while a real fire_last anim plays and then takes `1 - lastShot weight` (no double lock); `iw` is MW2019's rule (on at clip 0,
-0.05 s blend); `auto` (default) picks per gun from its anim names. The empty layer also hands off to reloads without a pop.
-
-### Empty melee and interrupts
-* `empty_melee_fix=1`: melee works with an empty clip (three code patches).
-* `interrupt_empty_melee=1`: rapid melee with an empty clip (post-melee quick raise stays interruptible).
-* `interrupt=<weapon>,<states>,<source>[,<actions>]`: IW-style interrupts, a raise / reload / rechamber ends early at its
-  interrupt point when fire, ADS, sprint, melee, reload or a weapon switch is pending (source: the anim's `interruptible` /
-  `state_timer_end` notetracks, a time, or a heuristic). `interrupt_enable`, `interrupt_debug`, `interrupt_trace`.
-* While the viewmodel shows another weapon (a knife melee, an offhand) the held gun's layers are not written into that tree.
-
-### Segmented reloads
-`segreload_empty=<weapon>,<end|start>` (`mw19` = `end`, `mwii` = `start`, `off`): shell-by-shell reloads with an MW2019
-rechamber end or an MWII empty start, using `reloadEmptyAnim` / `reloadEmptyTime`. `segreload_enable=0` turns it off.
-
-### Hand IK (experimental)
-`ik=<weapon>,1[,l|r|lr[,notelessWeight[,orient]]]`, `ik_enable=1` (global, default 0), `ik_alias`, `ik_notes`, `ik_blend`,
-`ik_always`, `ik_debug`. A two-bone solve of the hands onto the gun's `tag_ik_loc_*`, weighted by the IW8
-`ik_{in,out}_{start,end}_{left,right}_hand` notetracks. Needed for non-rigid idle_active additives.
-
-### MW slide
-`slide_enable=1` (default 0). IW8 slide movement in BG (server and prediction agree): `slide_suit` (preset or SuitDef
-overrides), `slide_dvars`, `slide_ads_ends`, `slide_sprint_lock`, `slide_camera`, `slide_view`, `slide_snap_round`
-(rounds BO3's velocity truncation), and the slide gesture additive layer on nodes 187/188/191 (`slide_gesture*`,
-`slide_native_anims`). `slide_debug=1..3`.
-
-### Viewmodel FOV pin
-`vmfov=off|mw|<degrees>` (65 = the viewmodels' authored FOV), `vmfov_ads=fade|hold`, `vmfov_depth`, `vmfov_max`,
-`vmfov_debug`. BO3 has one projection, so the gun is moved along the view axis to match the on-screen size of the pinned FOV.
+### Akimbo per-hand layers
+Add `,side:left` to an `empty` or `bullet` line to drive it from the left gun, so each hand's slide and rounds follow
+their own ammo. The left animation must use the left gun's bone names (see [Authoring](#authoring-animations)).
 
 ### Ammo hide
-Spent rounds hide through the DObj hide bits (like HidePart), driven by the clip, for every gun with a `bullet` line.
-* `ammohide_auto=0|1` (default 1, or `<weapon>,0` to opt out): joints = the bullets anim's round-named parts (`bullet`,
-  `round`, `shell`, `j_b_<n>`, and BO7/IW9 `j_ammo_*` incl. left-gun `_le` / `1`-suffix names; `tag_ammo_*` tags,
-  followers and mags are not rounds). Default order: nearest the follower / pusher (else `j_bolt` / `tag_flash`) first.
-* `ammohide_order=<weapon>,<joint>,...` (first spent first) and `ammohide_spend=<weapon>,<joint>:<clip>,...` (hidden at
-  `<clip>` rounds or fewer), `ammohide_reverse=<weapon>`: generated by `tools/ammohide_order.py` from the bullets anim
-  (BEGIN/END section in the cfg). An explicit `ammohide=<weapon>,<joint>,...` line wins over everything.
-* `ammohide_reload=0|1` (default 1): through a reload the mag shows the count the reload anim's `gramien_hide_full_magazine` /
-  `gramien_show_full_magazine` / `gramien_watch_ammo` notes give.
-* **Gramien notes:** if the mag still uses a Gramien `_dyn` scripted-animation material, its vertex animation adds a second
-  copy of the feed motion on top of the bullets additive. Skip the gun in the Gramien script (script names, no `_zm`) or give
-  the mag a static material.
-* **Round guard** (`ammohide_guard=0|1`, `ammohide_park`, `ammohide_debug`): bullet anims park spent rounds far away. After
-  each viewmodel skeleton build, any round-like bone parked more than `ammohide_park` (12) units from its base pose is hidden
-  with everything under it, so a spent round never floats near the camera.
+On by default for every gun with a `bullet` line: spent rounds are hidden as the clip drops, and come back when the
+reload puts a full mag in.
 
-### Pause clock
-No key. Every time-driven layer runs on a game clock held while cg time stalls (the solo pause menu), so layers freeze
-and resume from the same pose.
+- **Hide order:** `tools/ammohide_order.py` works out the order from the bullets animation and writes it into your cfg.
+- **Reload timing:** follows Gramien-style `gramien_hide_full_magazine` / `gramien_show_full_magazine` /
+  `gramien_watch_ammo` notetracks on the reload anim if they're there. Otherwise the old count shows until the
+  ammo is added.
+- **Round guard:** any round the animation throws far away is hidden as well, so nothing floats near the camera.
+- **Opt out:** `ammohide_auto=<weapon>,0` for one gun.
+- If a mag still uses a Gramien `_dyn` material, give it a normal material or skip it in the Gramien script, or the
+  feed motion is doubled.
 
-### Arxan handling on retail
-The retail exe's Arxan integrity checks (1,069 on CL 13892626: 1,000 plain plus 69 obfuscated-store checks) would kill the
-game ~20 s after any code patch. weapon_tech neutralises them first (`bo3_arxan.h`, once per process, shared through a named
-record with other modules that carry the same code); if that fails it installs nothing. A standalone copy is in
-[`extras/arxan`](extras/arxan). Debug: `WEAPONTECH_CRASHLOG=1` logs access violations; `WEAPONTECH_SKIP=a,b,...` leaves
-install groups out (melee, recoil, anim, perf, ik, inspect, intmelee, interrupt, segreload, slide, vmfov, arxan).
+### IW8 kick & recoil patterns
+MW2019's weapon-offset patterns (`wop_*` lines) and view kick (`wop_kick`, `wop_spring`).
 
-Perf keys: `perf_eventhooks`, `perf_cfgwatch`, `perf_pollms`, `perf_hotlog`, `perf_timing`.
+- **From IW8 data:** `tools/iw8_wop_cfg.py` turns an IW8 weapon JSON into cfg lines.
+- **Kick return:** `wop_kickreturn=1`.
+- **Camera:** `cam_shake` scales camera shake, and `camera_free` lets camera animations move only the camera.
 
-## Authoring anims for it
+### Idle, locomotion & sway
+- `idle_active`: MW2019's looping hip idle.
+- `locomotion`: walk loops synced to BO3's view bob, plus a jog layer.
+- `sway_*`: MW2019's advanced hip sway, idle sway and stance pivots.
 
-* **Additives:** frame 0 is the reference pose; the linker drops it, so a pose additive needs **3 frames** (reference, pose,
-  pose). A 2-frame pose additive never binds on a slot (the log says so). Slot xanims are additive on the gun's own bones,
-  never the hands.
-* **Bullets anims:** one frame per round spent, frame 0 = full mag. Rounds the clip has spent move to their final pose
-  (IW/BO7 convention: far away or into the mag). The `mag` argument of the `bullet` line is the anim's round count; BO3 clip
-  may be mag + 1 with a chambered round. Run `tools/ammohide_order.py` to derive the hide order.
-* **Akimbo left gun:** the dual-wield rig renames the left gun's bones with a suffix (`j_slide1`, `tag_pistol_offset1`,
-  `tag_weapon_le`, `j_bolt1`, `j_ammo_011`, `tag_brass_le`). A `side:left` xanim must key those names.
-  `tools/gen_left_additives.py` builds the left twin from the right gun's additive (left idle pose x the right bone's own-frame
-  delta). The GDT model must be a skeleton that holds both guns.
-* **Inspect:** put the anims in `lowReadyLoopAnim` (normal) and `lowReadyInAnim` / `lowReadyOutAnim` (empty); remove any
-  script that calls `SetLowReady` for the same gun.
-* **Slide gesture:** in / loop / out additives in `jukeForwardAnim` (187), `jukeBackwardAnim` (188), `jukeForwardADSAnim` (191);
-  each xanim = the idle frame, then the gesture frames.
-* **IK notes:** `ik_{in,out}_{start,end}_{left,right}_hand` notetracks, or `ik_notes=` lines if the linker strips them.
-* **Locomotion:** multi-stride walk loops (4 strides for an MW19 `walk_loop`) need a `locomotion=...,walk,bob,<strides>` line,
-  otherwise BO3 plays the whole anim per stride, several times too fast.
-* **GDT edits** must be re-read by your linker pipeline before linking, or the stale data is used.
+### Inspect
+`inspect_enable=1`, then `inspect=<weapon>,1` per gun. The default key is **I**. It plays the gun's
+`lowReadyLoopAnim`.
+
+- **Empty inspect:** with an empty clip it plays `lowReadyInAnim` instead (MWII style). `inspect_empty` switches
+  between `in`, `out` and `off`.
+- **HUD:** `inspect_hidehud=1` hides the HUD while inspecting. The crosshair always hides.
+- **Akimbo:** dual-wield guns are supported.
+
+### Last shot
+`empty_lastshot` decides when the empty pose comes in after the last round. The default `auto` handles both cases:
+
+- A gun with a real fire-last animation plays it, then locks empty with no pop.
+- A gun without one locks empty straight away, like MW2019.
+
+### Melee & interrupts
+- `empty_melee_fix=1`: melee works on an empty gun.
+- `interrupt_empty_melee=1`: rapid melee on an empty gun, the same as with ammo.
+- `interrupt=...`: lets raises, reloads and rechambers end early when the player fires, aims, sprints, melees,
+  reloads or switches. The cut-off point comes from the anim's notetracks, a time, or a heuristic.
+
+### Segmented reloads
+`segreload_empty=<weapon>,end` (MW2019: rechamber at the end) or `start` (MWII: rechamber first) for shell-by-shell
+weapons.
+
+### MW slide
+`slide_enable=1` turns on MW2019 slide movement for the whole map, with the slide gesture animations. Off by default.
+
+### Viewmodel FOV pin
+`vmfov=mw` (or a number of degrees) keeps the gun the same size on screen whatever the player's FOV. Off by default.
+
+### Hand IK *(experimental)*
+`ik_enable=1` plus `ik=<weapon>,1` keeps the hands on the gun, using IW8's IK notetracks. It has seen little
+in-game testing.
+
+## Authoring animations
+
+- **Pose additives need 3 frames:** frame 0 is the reference (dropped by the linker), then the pose twice. A 2-frame
+  pose never shows up, and the log will tell you.
+- **Bullets animations:** one frame per round, with frame 0 = full mag. Spent rounds move to their final spot, either
+  into the mag or far away, as IW and BO7 do.
+- **Akimbo left gun:** the dual-wield rig renames the left gun's bones, e.g. `j_slide1`, `j_bolt1`,
+  `tag_weapon_le`, `j_ammo_011`. `tools/gen_left_additives.py` builds the left-gun version of a right-gun additive.
+- **Inspect:** the normal inspect goes in `lowReadyLoopAnim`, the empty inspect in `lowReadyInAnim`. Remove any
+  script that calls `SetLowReady` on the same gun.
+- **Walk loops:** MW2019 walk loops cover several strides, so tell weapon_tech how many with a
+  `locomotion=<weapon>,walk,bob,<strides>` line.
+- **After GDT edits,** update your GDT database before linking, or the old data gets used.
+
+`tools/` has the authoring helpers; see [`tools/README.md`](tools/README.md).
 
 ## Building
 
-Needs Visual Studio with the C++ x64 tools. `build.bat` (or `build.ps1`) finds `vcvars64.bat` through `vswhere`, then runs
+You need Visual Studio with the C++ x64 tools.
 
 ```
-cl /nologo /O2 /MT /EHsc /std:c++17 /LD weapon_tech.cpp /Fe:weapon_tech.dll /link kernel32.lib
+build.bat
 ```
 
-from `src\` and writes `build\weapon_tech.dll`. `build.bat -Out <dir>` changes the output folder; `-Extras` also compile-checks
-`extras\arxan\arxan.cpp`. Set `VCVARS` to a `vcvars64.bat` path to skip the search.
+This writes `build\weapon_tech.dll`.
+
+- `-Out <dir>` changes the output folder.
+- `-Extras` also builds `extras\arxan`.
+- If it can't find Visual Studio, set `VCVARS` to your `vcvars64.bat`.
+
+## Troubleshooting
+
+- **Nothing happens:** check `weapon_tech.log`. It says whether the exe was recognised, which cfg was read, and why
+  a feature was skipped.
+- **A cfg change didn't apply:** that key probably needs a game restart; see the reference.
+- **A typo in a key:** it's ignored and logged once.
+- **Retail crashes after about 20 seconds:** another mod is patching code without handling Arxan fully. weapon_tech
+  handles it itself; see [`extras/arxan`](extras/arxan) if you need the same fix in your own DLL.
+
+## Known issues
+
+- Only BO3 Enhanced (CL 20659811) and retail (CL 13892626) are supported.
+- Most setup keys need a game restart to change.
+- On dual-wield guns, the left gun's spent rounds don't hide yet. Its empty and bullets layers do work.
+- The bullets animation can run about one round ahead near a full mag.
+- Hand IK is experimental. Interrupts, segmented reloads and inspects may need per-gun tuning.
+- Kick return needs at least one `wop_kick` line for the gun.
 
 ## Repo layout
 
 ```
-src/                 the DLL source: weapon_tech.cpp + bo3_*.h headers (one translation unit)
-docs/                CONFIG_REFERENCE.md
-examples/            weapon_tech.cfg: a commented sample for each feature
-tools/               ammohide_order.py, gen_left_additives.py and other content authoring helpers (tools/README.md)
-extras/arxan/        standalone Arxan neutraliser (arxan.cpp / arxan.hpp), no project dependencies
+src/            the DLL source (weapon_tech.cpp + headers)
+docs/           CONFIG_REFERENCE.md: every key in detail
+examples/       weapon_tech.cfg: a commented sample of every feature
+tools/          authoring helpers (hide order, left-gun anims, IW8 recoil data)
+extras/arxan/   standalone Arxan neutraliser for retail
 build.bat, build.ps1
 ```
 
-## Known issues and limitations (alpha)
+## Credits
 
-* Only the two exes above are supported; the addresses are matched against the code at install time and a mismatch installs
-  that hook group off rather than guessing.
-* Most hook-installing keys are not live: edit the cfg and restart the game (the reference marks what is live).
-* Hand IK is experimental and has seen little in-game testing. `camera_free` only acts on WOP weapons. Interrupts, segmented
-  reloads and inspect are tuned per gun and may need per-gun cfg work.
-* Auto ammo hide uses one `bullet` line per weapon variant; the left gun of a dual-wield pair does not get its own hide
-  (the `j_ammo_*` left names are recognised, but only the first bullet line's anim is read). The bullets time mapping can run
-  about one round ahead early in the mag, because the linker drops frame 0. Compiled anims can drop parts the GDT skeleton
-  lacks; the generated order lines name every joint so hiding does not depend on them.
-* The kick-return capture only takes effect with at least one `wop_kick` line.
-* An older neutraliser that patches only the 1,000 plain Arxan checks crashes retail about 20 s later; use the one in this
-  repo.
-* Typos in keys are only logged, not rejected.
+- **BOIII:** the retail Arxan neutralising approach comes from the BOIII
+  client, as do many of the reference points used to map the retail exe.
+- **T7Overcharged:** weapon_tech's Arxan handling started as a port of T7Overcharged's `arxan.cpp`, and it
+  follows T7Overcharged's approach to supporting both Enhanced and retail.
 
 ## License
 
