@@ -17,7 +17,7 @@ k = mag - clip, time (k+1)/(mag+1)), so a round parked from frame f on is hidden
 
 Usage: python ammohide_order.py <weapon_tech.cfg> [--bo3 <game dir>] [--write]
   --bo3 <dir>  Black Ops III folder holding xanim_export/ (default: the BO3_DIR environment variable)
-  --write      replace the section between the BEGIN/END markers in the cfg (default: print the section);
+  --write      replace the generated:ammohide_order block in the cfg (default: print the section);
                the cfg is copied to <cfg>.pre_hideorder.bak once first
 The bullet anims named in the cfg's additive=<weapon>,bullet,... lines are looked up by name under <dir>/xanim_export.
 Guns with their own ammohide= line are skipped (it wins in the DLL). Long lists continue on '<key>=<weapon>,+,...'
@@ -35,9 +35,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import xanimlib as X  # noqa: E402
 
 BO3 = None  # game folder, set in main() from --bo3 / BO3_DIR
-BEGIN = '# ==== BEGIN ammohide order (tools/ammohide_order.py) ===='
-OLD_BEGINS = ['# ==== BEGIN ammohide order (bullet_empty_additives\\ammohide_order.py) ====']  # still replaced in place
-END = '# ==== END ammohide order ===='
+# cfg format v2: a fenced generator block that opens its own [section]; weapon_tech restores the section in force before
+# BEGIN at END, so the block can sit anywhere in the file. Older fences are still found and replaced in place.
+BEGIN = '# ==== BEGIN generated:ammohide_order ===='
+END = '# ==== END generated:ammohide_order ===='
+SECTION = '[ammo_hide]'
+OLD_BEGINS = ['# ==== BEGIN ammohide order (tools/ammohide_order.py) ====',
+              '# ==== BEGIN ammohide order (bullet_empty_additives\\ammohide_order.py) ====']
+OLD_ENDS = ['# ==== END ammohide order ====']
 PARK_EPS = 0.05     # inches: two rounds share a parking spot
 SETTLE_EPS = 0.02   # inches: a round has reached its final pose
 
@@ -131,6 +136,13 @@ def find_begin(text):
     return None
 
 
+def find_end(text):
+    for e in [END] + OLD_ENDS:
+        if e in text:
+            return e
+    return None
+
+
 def main():
     global BO3
     args = sys.argv[1:]
@@ -151,10 +163,10 @@ def main():
         raise SystemExit('set the Black Ops III folder with --bo3 <dir> or the BO3_DIR environment variable')
     cfg = args[0]
     text = open(cfg, encoding='utf-8', errors='replace').read()
-    ob = find_begin(text)
-    body = (text.split(ob)[0] if ob else text) + (text.split(END, 1)[1] if ob and END in text else '')
+    ob, oe = find_begin(text), find_end(text)
+    body = (text.split(ob)[0] if ob else text) + (text.split(oe, 1)[1] if ob and oe else '')
     explicit = {m.group(1).lower() for m in re.finditer(r'^ammohide=([^,\s]+),', body, re.M)}
-    out = [BEGIN, '# Spent-round hide order derived from each bullets anim (weapon_tech ApplyAutoAmmoHide). Regenerate after',
+    out = [BEGIN, SECTION, '# Spent-round hide order derived from each bullets anim (weapon_tech ApplyAutoAmmoHide). Regenerate after',
            '# adding bullet lines; edit by hand only outside this section (an ammohide= line, ammohide_order/_spend/_reverse).']
     seen = set()
     for m in re.finditer(r'^additive=([^,\s]+),bullet,[^,]+,([^,\s]+),[^,\s]+,(\d+)', body, re.M):
@@ -178,14 +190,14 @@ def main():
     if not os.path.exists(bak):
         shutil.copy2(cfg, bak)
     text = open(cfg, encoding='utf-8', errors='replace').read()  # re-read right before writing
-    ob = find_begin(text)
-    if ob and END in text:
+    ob, oe = find_begin(text), find_end(text)
+    if ob and oe:
         pre, rest = text.split(ob, 1)
-        text = pre + section + rest.split(END, 1)[1]
+        text = pre + section + rest.split(oe, 1)[1]
     else:
         text = text.rstrip('\n') + '\n\n' + section + '\n'
     open(cfg, 'w', encoding='utf-8', newline='\n').write(text)
-    print(f'wrote {len(out) - 4} line(s) into {cfg}')
+    print(f'wrote {len(out) - 5} line(s) into {cfg}')
 
 
 if __name__ == '__main__':
