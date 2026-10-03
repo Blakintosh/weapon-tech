@@ -72,6 +72,26 @@ one text file, `weapon_tech.cfg`.
 
 A short guide to each feature. The full syntax for every key is in the [config reference](docs/CONFIG_REFERENCE.md).
 
+| Feature | Turn it on with | Default | Enhanced | Retail | Status |
+|---|---|---|:-:|:-:|---|
+| Additive layers (recoil / bullets / empty) | `additive=` lines per gun | off | ✅ | ✅ | Stable |
+| Akimbo per-hand layers | `,side:left` on a slot line | off | ✅ | ✅ | Stable |
+| Ammo hide | any gun with a `bullet` line | **on** | ✅ | ✅ | Stable |
+| Round guard | comes with ammo hide | **on** | ✅ | ✅ | New |
+| IW8 kick & recoil patterns | `wop_*` lines per gun | off | ✅ | ✅ | Stable |
+| Kick return | `wop_kickreturn=1` | off | ✅ | ✅ | New |
+| Camera shake / free camera | `cam_shake=`, `camera_free=` | off | ✅ | ✅ | Stable |
+| idle_active / locomotion / sway | `idle_active=`, `locomotion=`, `sway_*` | off | ✅ | ✅ | Stable |
+| Inspect & empty inspect | `inspect_enable=1` + `inspect=` | off | ✅ | ✅ | Stable |
+| Last shot (`empty_lastshot`) | automatic with an `empty` layer | auto | ✅ | ✅ | Stable |
+| Empty-gun melee / rapid melee | `empty_melee_fix=1`, `interrupt_empty_melee=1` | off | ✅ | ✅ | Stable |
+| Interrupts | `interrupt=` lines | off | ✅ | ✅ | Needs per-gun tuning |
+| Segmented reloads | `segreload_empty=` | off | ✅ | ✅ | Stable |
+| MW slide | `slide_enable=1` (map-wide) | off | ✅ | ✅ | Stable |
+| Viewmodel FOV pin | `vmfov=mw` (map-wide) | off | ✅ | ✅ | Stable |
+| Hand IK | `ik_enable=1` + `ik=` | off | ✅ | ✅ | Experimental |
+| Pause clock | always | **on** | ✅ | ✅ | Stable |
+
 ### Additive layers
 Plays an additive animation on top of the gun's normal animation, driven by game state.
 
