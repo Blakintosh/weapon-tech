@@ -30,21 +30,23 @@ one text file, `weapon_tech.cfg`.
 
 ## Quick start
 
-1. **Build** the DLL (see [Building](#building)), or grab a release.
-2. **Copy** `weapon_tech.dll` and a `weapon_tech.cfg` into your map's `zone` folder, e.g. `usermaps\<map>\zone\`.
-3. **Load it** once from your map's UI Lua, before the player first raises a weapon:
+1. **Download** the release zip and unzip it (or [build](#building) the DLL yourself).
+2. **Install** into your map. In a command prompt in the unzipped folder:
 
-   ```lua
-   local pkg = require("package")
-   local ok, init = pcall(pkg.loadlib, [[.\usermaps\<map>\zone\weapon_tech.dll]], "init")
-   if ok and init then
-       local called, active = pcall(init, true)
-       if called and active == true then Engine.SetDvar("weapontech_active", 1) end
-   end
+   ```
+   kit\install.bat <mapname>
    ```
 
-   `init(true)` returns `true` when weapon_tech is running. It's safe to call on every level load.
-4. **Add a gun** to the cfg. For example, a recoil layer and an inspect for one weapon:
+   It copies `weapon_tech.dll` and a starter `weapon_tech.cfg` into `usermaps\<mapname>\zone\`, copies the loader Lua
+   to `ui\t7\utility\`, and adds its rawfile line to your `.zone`. It never overwrites an existing cfg, and running it
+   twice changes nothing. If it can't find Black Ops III, add `-GameDir <path>`; add `-Bake` to bake the cfg into the map.
+3. **Add one line** at the top of `main()` in your map's client script (`scripts\zm\<mapname>.csc`), then relink:
+
+   ```
+   LuiLoad("ui.t7.utility.weapon_tech_loader");
+   ```
+
+4. **Add a gun** to `zone\weapon_tech.cfg`. For example, a recoil layer and an inspect for one weapon:
 
    ```ini
    [features]
@@ -61,7 +63,29 @@ one text file, `weapon_tech.cfg`.
 5. **Check the log:** `weapon_tech.log` next to `BlackOps3.exe` lists the cfg it read, what it installed, and
    anything it skipped and why. Read it after your first run.
 
+[`docs/QUICKSTART.md`](docs/QUICKSTART.md) has the cfg and the log line to look for, for each feature.
 [`examples/weapon_tech.cfg`](examples/weapon_tech.cfg) has a commented example of every feature to copy from.
+
+### Without the installer
+
+1. Copy `weapon_tech.dll` and `kit\weapon_tech.cfg` (as `weapon_tech.cfg`) into `usermaps\<map>\zone\`.
+2. Copy `kit\ui\t7\utility\weapon_tech_loader.lua` to `usermaps\<map>\ui\t7\utility\` and set `MAP_NAME` in it to
+   your map's folder name.
+3. Add `rawfile,ui/t7/utility/weapon_tech_loader.lua` to `zone_source\<map>.zone`.
+4. Add the `LuiLoad` line above to your CSC, relink, and check the log.
+
+Or load the DLL from any UI Lua you already run, before the player first raises a weapon:
+
+```lua
+local pkg = require("package")
+local ok, init = pcall(pkg.loadlib, [[.\usermaps\<map>\zone\weapon_tech.dll]], "init")
+if ok and init then
+    local called, active = pcall(init, true)
+    if called and active == true then Engine.SetDvar("weapontech_active", 1) end
+end
+```
+
+`init(true)` returns `true` when weapon_tech is running. It's safe to call on every level load.
 
 ## The cfg file
 
@@ -96,11 +120,13 @@ No linker changes are needed. When you publish:
    - **Baked into the map:** put it at `usermaps\<map>\weapon_tech\weapon_tech.cfg` and add
      `rawfile,weapon_tech/weapon_tech.cfg` to your map's `.zone` file, then remove the loose copy from `zone\`.
      A loose file, if present, always wins, which is handy for tuning during development.
-3. Make sure your UI Lua loads the DLL (step 3 of the Quick start) in the shipped build, not just a dev one.
+3. Make sure the loader is in the shipped build too: the `rawfile,ui/t7/utility/weapon_tech_loader.lua` zone line and the
+   `LuiLoad` line in your CSC (Quick start, steps 2 and 3), not just in a dev build.
 
 ## Feature guide
 
-A short guide to each feature. The full syntax for every key is in the [config reference](docs/CONFIG_REFERENCE.md).
+A short guide to each feature. For copy-paste setup see the [quickstart](docs/QUICKSTART.md); the full syntax for every
+key is in the [config reference](docs/CONFIG_REFERENCE.md).
 
 | Feature | Turn it on with | Default | Enhanced | Retail | Status |
 |---|---|---|:-:|:-:|---|
@@ -225,6 +251,8 @@ This writes `build\weapon_tech.dll`.
 - `-Out <dir>` changes the output folder.
 - `-Extras` also builds `extras\arxan`.
 - If it can't find Visual Studio, set `VCVARS` to your `vcvars64.bat`.
+- `tools\package.ps1` builds, then writes `dist\weapon_tech-<version>.zip` (the DLL, `kit\`, README, LICENSE, docs and
+  an `INSTALL.txt`). The version comes from `src\wt_version.h`.
 
 ## Troubleshooting
 
@@ -250,9 +278,10 @@ This writes `build\weapon_tech.dll`.
 
 ```
 src/            the DLL source (weapon_tech.cpp + headers)
-docs/           CONFIG_REFERENCE.md: every key in detail
+docs/           QUICKSTART.md (per-feature setup), CONFIG_REFERENCE.md (every key)
+kit/            what a release installs: install.bat/.ps1, starter weapon_tech.cfg, ui/t7/utility/weapon_tech_loader.lua
 examples/       weapon_tech.cfg: a commented sample of every feature
-tools/          authoring helpers (hide order, left-gun anims, IW8 recoil data)
+tools/          authoring helpers (hide order, left-gun anims, IW8 recoil data), package.ps1 (builds the release zip)
 extras/arxan/   standalone Arxan neutraliser for retail
 build.bat, build.ps1
 ```
