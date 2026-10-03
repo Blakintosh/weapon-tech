@@ -1,0 +1,19 @@
+# build output
+build/
+*.dll
+*.obj
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.exe
+*.addon64
+
+# backups, logs, scratch
+*.bak
+*.pre_*
+*.log
+*.tmp
+__pycache__/
+*.pyc
+work/
