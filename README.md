@@ -22,7 +22,7 @@ one text file, `weapon_tech.cfg`.
 | **Idle, locomotion & sway** | MW2019 idle_active, walk and jog loops, advanced sway |
 | **Inspect** | Press a key to inspect; separate empty-gun inspect; optional HUD hide |
 | **Last shot** | The gun locks empty at the right moment, with or without a fire-last animation |
-| **Melee & interrupts** | Rapid melee on an empty gun; raises and reloads can be cut short like in IW games |
+| **Melee & interrupts** *(interrupts experimental)* | Rapid melee on an empty gun; raises and reloads can be cut short like in IW games |
 | **Segmented reloads** | Shell-by-shell reloads with MW2019- or MWII-style empty handling |
 | **MW slide** | MW2019 slide movement and slide gestures (global opt-in) |
 | **Viewmodel FOV pin** | Keeps the gun the same size on screen whatever the player's FOV (global opt-in) |
@@ -146,7 +146,7 @@ MW2019's weapon-offset patterns (`wop_*` lines) and view kick (`wop_kick`, `wop_
 - A gun with a real fire-last animation plays it, then locks empty with no pop.
 - A gun without one locks empty straight away, like MW2019.
 
-### Melee & interrupts
+### Melee & interrupts (interrupts experimental)
 - `empty_melee_fix=1`: melee works on an empty gun.
 - `interrupt_empty_melee=1`: rapid melee on an empty gun, the same as with ammo.
 - `interrupt=...`: lets raises, reloads and rechambers end early when the player fires, aims, sprints, melees,
