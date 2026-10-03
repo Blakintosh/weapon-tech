@@ -1,13 +1,13 @@
 # weapon_tech
 
-> **Alpha.** Things will change between builds, and some features have only been tried on a handful of maps and guns.
+> **Alpha.** Things will change between builds, and some features have only been tried on a handful of maps and guns. Use at your own risk.
 
 `weapon_tech.dll` brings modern Call of Duty weapon feel to Black Ops III custom maps. It adds recoil and empty-state
 animation layers, MW2019-style kick and sway, inspects, akimbo per-hand animation, and more. Everything is driven by
 one text file, `weapon_tech.cfg`.
 
 - **Works on both PC builds:** BO3 Enhanced and the standard retail exe. On any other exe it does nothing.
-- **Standalone:** no dependency on T7Overcharged or any other DLL.
+- **Standalone:** load via Lua, it just works.
 - **Opt-in:** each feature only switches on for the guns you list in the cfg. Guns you don't mention behave exactly
   as stock BO3.
 
@@ -135,17 +135,17 @@ key is in the [config reference](docs/CONFIG_REFERENCE.md).
 | Ammo hide | any gun with a `bullet` line | **on** | ✅ | ✅ | Stable |
 | Round guard | comes with ammo hide | **on** | ✅ | ✅ | New |
 | IW8 kick & recoil patterns | `wop_*` lines per gun | off | ✅ | ✅ | Stable |
-| Kick return | `wop_kickreturn=1` | off | ✅ | ✅ | New |
+| Kick return | `wop_kickreturn=1` | off | ⚠️ | ⚠️ | Experimental |
 | Camera shake / free camera | `cam_shake=`, `camera_free=` | off | ✅ | ✅ | Stable |
 | idle_active / locomotion / sway | `idle_active=`, `locomotion=`, `sway_*` | off | ✅ | ✅ | Stable |
 | Inspect & empty inspect | `inspect_enable=1` + `inspect=` | off | ✅ | ✅ | Stable |
 | Last shot (`empty_lastshot`) | automatic with an `empty` layer | auto | ✅ | ✅ | Stable |
 | Empty-gun melee / rapid melee | `empty_melee_fix=1`, `interrupt_empty_melee=1` | off | ✅ | ✅ | Stable |
-| Interrupts | `interrupt=` lines | off | ✅ | ✅ | Experimental |
+| Interrupts | `interrupt=` lines | off | ❌ | ❌ | Not ready |
 | Segmented reloads | `segreload_empty=` | off | ✅ | ✅ | Stable |
 | MW slide | `slide_enable=1` (map-wide) | off | ✅ | ✅ | Stable |
-| Viewmodel FOV pin | `vmfov=mw` (map-wide) | off | ✅ | ✅ | Stable |
-| Hand IK | `ik_enable=1` + `ik=` | off | ✅ | ✅ | Experimental |
+| Viewmodel FOV pin | `vmfov=mw` (map-wide) | off | ⚠️ | ⚠️ | Experimental |
+| Hand IK | `ik_enable=1` + `ik=` | off | ⚠️ | ⚠️ | Experimental |
 | Pause clock | always | **on** | ✅ | ✅ | Stable |
 
 ### Additive layers
@@ -290,8 +290,7 @@ build.bat, build.ps1
 
 - **BOIII:** the retail Arxan neutralising approach comes from the BOIII
   client, as do many of the reference points used to map the retail exe.
-- **T7Overcharged:** weapon_tech's Arxan handling started as a port of T7Overcharged's `arxan.cpp`, and it
-  follows T7Overcharged's approach to supporting both Enhanced and retail.
+- **T7Overcharged:** weapon_tech started as a fork of T7Overcharged.
 
 ## License
 
