@@ -737,7 +737,7 @@ namespace
 	// A code patch in BG, so the server's Pmove and the client's prediction run the same code. Not live.
 	uintptr_t kIntPostMeleeEmptyCall = 0x27B3A35;
 	uint8_t kIntPostMeleeCtx[] = {0x42, 0x83, 0x7C, 0x2F, 0x5C, 0x20, 0x75, 0x6E, 0x8B, 0xD6, 0x48, 0x8B, 0xCF};
-	// Retail (0x2664935): cmp dword [rdi+rbp+5Ch],20h; jnz; mov edx,r14d; mov rcx,rdi | E8 B6 A9 00 00
+	// Retail (0x2664275): cmp dword [rdi+rbp+5Ch],20h; jnz; mov edx,r14d; mov rcx,rdi | E8 B6 A9 00 00
 	const uint8_t kIntPostMeleeCtxRetail[] = {0x83, 0x7C, 0x2F, 0x5C, 0x20, 0x75, 0x73, 0x41, 0x8B, 0xD6, 0x48, 0x8B, 0xCF};
 	static_assert(sizeof(kIntPostMeleeCtxRetail) == 13, "13 bytes");
 
@@ -755,7 +755,7 @@ namespace
 			return;
 		}
 		// E8 76 47 01 00 = call +0x14776 -> 0x1427C81B0 (BG_ClipEmpty): the rel32 ties the bytes to the callee.
-		// Retail: E8 B6 A9 00 00 -> BG_ClipEmpty 0x14266F2F0.
+		// Retail: E8 B6 A9 00 00 -> BG_ClipEmpty 0x14266EC30.
 		const bool r = IsRetailExe();
 		if (PatchBytesCtx(kIntPostMeleeEmptyCall, r ? kIntPostMeleeCtxRetail : kIntPostMeleeCtx, sizeof(kIntPostMeleeCtx),
 		                  r ? std::initializer_list<uint8_t>{0xE8, 0xB6, 0xA9, 0x00, 0x00} : std::initializer_list<uint8_t>{0xE8, 0x76, 0x47, 0x01, 0x00},

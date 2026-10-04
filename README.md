@@ -256,7 +256,7 @@ This writes `build\weapon_tech.dll`.
 
 ## Troubleshooting
 
-- **Which version is this?** The first line of `weapon_tech.log` says, e.g. `weapon_tech 0.1.0-alpha loaded from ...`.
+- **Which version is this?** The first line of `weapon_tech.log` says, e.g. `weapon_tech 0.1.1-alpha loaded from ...`.
   It's also in the DLL's file properties, and tools can call the exported `weapon_tech_version()`.
 - **Nothing happens:** check `weapon_tech.log`. It says whether the exe was recognised, which cfg was read, and why
   a feature was skipped.
@@ -267,7 +267,7 @@ This writes `build\weapon_tech.dll`.
 
 ## Known issues
 
-- Only BO3 Enhanced (CL 20659811) and retail (CL 13892626) are supported.
+- Only BO3 Enhanced (CL 20659811) and the current Steam retail exe (build 24784313) are supported. An older or newer retail exe installs nothing until it has addresses.
 - Most setup keys need a game restart to change.
 - On dual-wield guns, the left gun's spent rounds don't hide yet. Its empty and bullets layers do work.
 - The bullets animation can run about one round ahead near a full mag.

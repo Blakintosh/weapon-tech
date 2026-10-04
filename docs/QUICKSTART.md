@@ -25,7 +25,7 @@ shortest path to a working gun.
    ```
 
 4. Relink, run the map, and read `weapon_tech.log` next to `BlackOps3.exe`. The first line is
-   `weapon_tech 0.1.0-alpha loaded from ...`. Later lines say which cfg it read and what it installed. Lines below marked
+   `weapon_tech 0.1.1-alpha loaded from ...`. Later lines say which cfg it read and what it installed. Lines below marked
    **Log** are what to look for.
 
 Without the installer, do the same four things by hand; the README's [Quick start](../README.md#quick-start) has the

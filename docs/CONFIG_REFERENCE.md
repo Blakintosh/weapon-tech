@@ -207,7 +207,7 @@ whole (old fences become `generated:` fences), and leaves anything a section wou
 | Build | SizeOfImage | TimeDateStamp | Notes |
 |---|---|---|---|
 | BO3 Enhanced (CL 20659811) | `0x1A53F000` | `0x67363F2A` | no Arxan |
-| Stock retail (CL 13892626) | `0x1D74B000` | `0x693D731E` | Arxan is neutralised first (below) |
+| Stock retail (Steam build 24784313, Aug 2026) | `0x1D75BC00` | `0x6A7B6355` | Arxan is neutralised first (below) |
 
 Any other image installs nothing and Arxan is not touched; the log names the image it found. The same cfg works on both
 exes and no key is exe-specific. Every patch site is verified against the exe's code bytes before it is written, so a

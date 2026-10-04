@@ -1421,7 +1421,7 @@ namespace
 		    0x48, 0x83, 0xC4, 0x20, 0x5B, 0xC3};                         // add rsp,20h; pop rbx; ret (rax = clientActive)
 		static const uint8_t kCopy[] = {
 		    0x48, 0x8B, 0x8E, 0xE8, 0x72, 0x2E, 0x00,  // mov rcx, [rsi+2E72E8h]
-		    0xE8, 0x44, 0x0A, 0x59, 0x01,              // call a nullsub (C2 00 00): rax survives it
+		    0xE8, 0, 0, 0, 0,                          // call a nullsub (C2 00 00): rax survives it (rel32 checked below)
 		    0x4C, 0x8B, 0x86, 0x20, 0x72, 0x2E, 0x00,  // mov r8, [rsi+2E7220h]
 		    0x48, 0x8B, 0xD7,                          // mov rdx, rdi (ps)
 		    0x48, 0x8B, 0xCE,                          // mov rcx, rsi (cg)
@@ -1441,7 +1441,8 @@ namespace
 			return false;
 		memcpy(&r, copy + 5 + 8, 4);
 		const uint8_t *nullsub = copy + 5 + 12 + r;
-		if (memcmp(copy + 5, kCopy, sizeof(kCopy)) != 0 || kKickCopy + 5 + sizeof(kCopy) - 1 != kCallAfterKickCopy ||
+		if (memcmp(copy + 5, kCopy, 8) != 0 || memcmp(copy + 5 + 12, kCopy + 12, sizeof(kCopy) - 12) != 0 ||
+		    kKickCopy + 5 + sizeof(kCopy) - 1 != kCallAfterKickCopy ||
 		    nullsub[0] != 0xC2 || nullsub[1] != 0 || nullsub[2] != 0)
 			return false;
 		const uint8_t *scale = At<uint8_t>(kKickAdsScaleCheck);

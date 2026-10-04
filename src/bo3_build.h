@@ -2,8 +2,8 @@
 //
 // Two exes are supported, each pinned by SizeOfImage + PE TimeDateStamp (any other exe: nothing is installed):
 //   Enhanced: the BO3 Enhanced BlackOps3.exe (CL 20659811), 0x1A53F000 / 0x67363F2A. Plain .text, no Arxan.
-//   Retail:   the stock Steam BlackOps3.exe (CL 13892626; BlackOps3b.exe on the dev machine), 0x1D74B000 /
-//             0x693D731E. Arxan: .text is decrypted at start-up and integrity checks run all the time, so
+//   Retail:   the stock Steam BlackOps3.exe (Steam build 24784313, depot 311211 manifest 8824612235115253119, linked
+//             2026-08-11), 0x1D75BC00 / 0x6A7B6355. Arxan: .text is decrypted at start-up and integrity checks run all the time, so
 //             bo3_arxan.h neutralises them (once per process, shared with stub_boot.dll; it recognises
 //             T7Overcharged's patches too) before any code is patched.
 // The two are different compiles: every code RVA, and most register contracts at hook sites, differ. Struct
@@ -21,7 +21,7 @@ namespace
 	WtExe g_wtExe = WtExe::Unknown;
 
 	constexpr DWORD kEnhancedImageSize = 0x1A53F000, kEnhancedStamp = 0x67363F2A;
-	constexpr DWORD kRetailImageSize = 0x1D74B000, kRetailStamp = 0x693D731E;
+	constexpr DWORD kRetailImageSize = 0x1D75BC00, kRetailStamp = 0x6A7B6355;
 
 	inline bool IsRetailExe() { return g_wtExe == WtExe::Retail; }
 	inline bool IsEnhancedExe() { return g_wtExe == WtExe::Enhanced; }

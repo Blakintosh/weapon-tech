@@ -9,7 +9,7 @@
 // pointer pair in the caller's frame, stores the original checksum instead, then does the
 // `add` itself, so the check always passes whatever we patched.
 //
-// Retail (PE timestamp 0x693D731E) had ~1000 of these and none of the "split" form
+// Retail (PE timestamp 0x6A7B6355) has 996 of these (the previous build, 0x693D731E, had 1000) and none of the "split" form
 // (89 04 8A E9); split sites are only counted.
 //
 // Once per process, not once per DLL: stub_boot.dll and weapon_tech.dll each carry this code, and
