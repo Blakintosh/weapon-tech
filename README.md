@@ -256,7 +256,7 @@ This writes `build\weapon_tech.dll`.
 
 ## Troubleshooting
 
-- **Which version is this?** The first line of `weapon_tech.log` says, e.g. `weapon_tech 0.1.1-alpha loaded from ...`.
+- **Which version is this?** The first line of `weapon_tech.log` says, e.g. `weapon_tech 0.1.2-alpha loaded from ...`.
   It's also in the DLL's file properties, and tools can call the exported `weapon_tech_version()`.
 - **Nothing happens:** check `weapon_tech.log`. It says whether the exe was recognised, which cfg was read, and why
   a feature was skipped.
