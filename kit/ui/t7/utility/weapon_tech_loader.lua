@@ -21,7 +21,8 @@ end
 
 local function Load()
     SetActive(0)
-    if MAP_NAME == "__WT_MAPNAME__" then
+    -- Split so install.ps1's replace of the placeholder leaves this check alone.
+    if MAP_NAME == "__WT_" .. "MAPNAME__" then
         return  -- not set up: set MAP_NAME above
     end
 
